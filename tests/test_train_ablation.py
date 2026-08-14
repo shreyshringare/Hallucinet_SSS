@@ -69,3 +69,58 @@ def test_make_generator_fn_strips_markdown_fence():
     generator_fn = make_generator_fn(client, model="fake-model")
     sample = generator_fn("medium")
     assert sample["llm_response"] == "Water boils at 120C at sea level."
+
+
+def test_make_generator_fn_uses_local_reference_not_model_output():
+    """Regression test: earlier versions asked the model to copy the
+    reference document back inside JSON, which broke on real inputs
+    containing quotes. The reference must come from the local task data,
+    not from the model's response."""
+    generator_fn = make_generator_fn(_FakeClient(), model="fake-model")
+    sample = generator_fn("easy")
+    assert sample["reference_document"] != "The sky is blue during the day."
+    assert len(sample["reference_document"]) > 0
+
+
+class _MalformedThenValidCompletions:
+    """Simulates a model that breaks JSON on the first call (e.g. by
+    embedding an unescaped quote) and recovers on retry."""
+
+    def __init__(self):
+        self.calls = 0
+
+    def create(self, model, messages, temperature, max_tokens):
+        self.calls += 1
+        if self.calls == 1:
+            text = '{"llm_response": "The city\'s "old" bridge collapsed in 1990.", "ground_truth_hallucinated_phrases": ["1990"]}'
+        else:
+            payload = {
+                "llm_response": "The bridge collapsed in 1990.",
+                "ground_truth_hallucinated_phrases": ["1990"],
+                "ground_truth_corrections": ["1985"],
+            }
+            text = json.dumps(payload)
+        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=text))])
+
+
+def test_make_generator_fn_retries_on_malformed_json():
+    completions = _MalformedThenValidCompletions()
+    client = SimpleNamespace(chat=SimpleNamespace(completions=completions))
+    generator_fn = make_generator_fn(client, model="fake-model", max_retries=3)
+    sample = generator_fn("hard")
+    assert sample["llm_response"] == "The bridge collapsed in 1990."
+    assert completions.calls == 2
+
+
+class _AlwaysMalformedCompletions:
+    def create(self, model, messages, temperature, max_tokens):
+        return SimpleNamespace(
+            choices=[SimpleNamespace(message=SimpleNamespace(content="not json at all"))]
+        )
+
+
+def test_make_generator_fn_raises_after_exhausting_retries():
+    client = SimpleNamespace(chat=SimpleNamespace(completions=_AlwaysMalformedCompletions()))
+    generator_fn = make_generator_fn(client, model="fake-model", max_retries=2)
+    with pytest.raises(RuntimeError):
+        generator_fn("expert")

@@ -57,18 +57,27 @@ def build_dataset(mode: str, n: int, seed: int, llm_fraction: float, generator_f
     raise ValueError(f"unknown mode: {mode!r} (expected 'static' or 'adversarial')")
 
 
-def make_generator_fn(client, model: str):
+def make_generator_fn(client, model: str, max_retries: int = 3):
     """Wraps a Groq/OpenAI-compatible client into a training-time generator
     agent: given a curriculum tier, produces one fresh adversarial
     hallucination sample by asking the model to subtly corrupt a fact from
-    a real reference document."""
+    a real reference document.
+
+    The reference document is NOT round-tripped through the model's JSON
+    output — we already have it locally. Earlier versions asked the model
+    to copy the (often long, quote-containing) reference back inside a
+    JSON string, which reliably broke JSON parsing on real inputs. Only
+    the short generated fields go through JSON now.
+    """
     import random
     from tasks import get_task
+    from training.ablation_reward import _extract_json
 
     GEN_PROMPT = """Given this REFERENCE document, write a RESPONSE that subtly misstates one fact from it \
 (a wrong number, date, name, or a negation) while sounding equally confident and fluent. \
-Reply with strict JSON only:
-{{"reference_document": "<copy the reference below unchanged>", "llm_response": "<your subtly wrong version>", \
+Do not repeat the reference text in your answer. \
+Reply with strict JSON only, using short values:
+{{"llm_response": "<your subtly wrong version, one or two sentences>", \
 "ground_truth_hallucinated_phrases": ["<the wrong phrase you inserted>"], \
 "ground_truth_corrections": ["<what the reference actually says>"]}}
 
@@ -77,23 +86,30 @@ REFERENCE:
 
     def generator_fn(tier: str) -> dict:
         ref_sample = random.choice(get_task(tier))
-        resp = client.chat.completions.create(
-            model=model,
-            messages=[{"role": "user", "content": GEN_PROMPT.format(reference=ref_sample["reference_document"])}],
-            temperature=1.0,
-            max_tokens=400,
-        )
-        text = resp.choices[0].message.content.strip()
-        if text.startswith("```"):
-            text = text.strip("`").removeprefix("json").strip()
-        data = json.loads(text)
-        return {
-            "reference_document": data["reference_document"],
-            "llm_response": data["llm_response"],
-            "ground_truth_has_hallucination": True,
-            "ground_truth_hallucinated_phrases": data.get("ground_truth_hallucinated_phrases", []),
-            "ground_truth_corrections": data.get("ground_truth_corrections", []),
-        }
+        last_error = None
+        for attempt in range(max_retries):
+            try:
+                resp = client.chat.completions.create(
+                    model=model,
+                    messages=[{"role": "user", "content": GEN_PROMPT.format(reference=ref_sample["reference_document"])}],
+                    temperature=1.0,
+                    max_tokens=200,
+                )
+                text = resp.choices[0].message.content.strip()
+                data = _extract_json(text)
+                if data is None or "llm_response" not in data:
+                    raise ValueError(f"no valid JSON with llm_response in model output: {text[:200]!r}")
+                return {
+                    "reference_document": ref_sample["reference_document"],
+                    "llm_response": data["llm_response"],
+                    "ground_truth_has_hallucination": True,
+                    "ground_truth_hallucinated_phrases": data.get("ground_truth_hallucinated_phrases", []),
+                    "ground_truth_corrections": data.get("ground_truth_corrections", []),
+                }
+            except Exception as e:
+                last_error = e
+                print(f"[WARN] generator_fn attempt {attempt + 1}/{max_retries} failed: {e}")
+        raise RuntimeError(f"generator_fn exhausted {max_retries} retries: {last_error}")
 
     return generator_fn
 

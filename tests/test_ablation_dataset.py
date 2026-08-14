@@ -50,6 +50,20 @@ def test_adversarial_dataset_no_generator_fn_still_works():
     assert "programmatic" in sources
 
 
+def test_adversarial_dataset_falls_back_when_generator_fn_raises():
+    """A generator_fn that always fails (e.g. rate-limited, malformed JSON
+    after retries) must not crash dataset construction — it should fall
+    back to a programmatic sample for that row instead."""
+
+    def failing_generator(tier):
+        raise RuntimeError("simulated generator failure")
+
+    rows = build_adversarial_dataset(n=50, seed=3, llm_fraction=1.0, generator_fn=failing_generator)
+    assert len(rows) == 50
+    assert all(r["source"] == "generator_llm_fallback" for r in rows)
+    assert all(r["llm_response"] for r in rows)
+
+
 def test_adversarial_dataset_uses_generator_fn_when_provided():
     calls = []
 

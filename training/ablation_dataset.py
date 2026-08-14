@@ -112,8 +112,16 @@ def build_adversarial_dataset(
     for tier in _tier_schedule(n):
         roll = rng.random()
         if roll < llm_fraction and generator_fn is not None:
-            sample = generator_fn(tier)
-            rows.append(_to_row(sample, tier, source="generator_llm"))
+            try:
+                sample = generator_fn(tier)
+                rows.append(_to_row(sample, tier, source="generator_llm"))
+            except Exception as e:
+                # A single bad LLM call (rate limit, malformed JSON after
+                # retries, etc.) must not crash an hours-long training run.
+                # Fall back to a programmatic sample for this row.
+                print(f"[WARN] generator_fn failed for tier={tier}, falling back to programmatic: {e}")
+                sample = generate_hallucination_sample(difficulty=tier)
+                rows.append(_to_row(sample, tier, source="generator_llm_fallback"))
         elif roll < llm_fraction + 0.35:
             sample = get_task(tier)[rng.randrange(len(get_task(tier)))]
             rows.append(_to_row(sample, tier, source="curated"))
