@@ -30,8 +30,20 @@ def _extract_json(text: str) -> Optional[dict]:
     match = re.search(r"\{.*\}", text, flags=re.DOTALL)
     if not match:
         return None
+    candidate = match.group(0)
     try:
-        return json.loads(match.group(0))
+        return json.loads(candidate)
+    except json.JSONDecodeError:
+        pass
+    # Models frequently emit `\'` to escape an apostrophe inside a
+    # double-quoted string (e.g. "they\'re"), which is not a legal JSON
+    # escape sequence (only \", \\, \n, \t, ... are valid) and breaks
+    # json.loads even though the rest of the object is well-formed.
+    # Normalizing it to a bare `'` is safe since JSON strings are
+    # double-quoted, so an unescaped apostrophe needs no escaping at all.
+    repaired = candidate.replace("\\'", "'")
+    try:
+        return json.loads(repaired)
     except json.JSONDecodeError:
         return None
 

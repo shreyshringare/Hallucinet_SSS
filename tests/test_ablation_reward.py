@@ -59,6 +59,17 @@ def test_parse_missing_required_field_returns_none():
     assert parse_completion(json.dumps({"confidence": 0.5})) is None
 
 
+def test_parse_repairs_invalid_backslash_quote_escape():
+    """Models frequently emit \\' to escape an apostrophe, which is not a
+    legal JSON escape sequence and breaks a naive json.loads even though
+    the rest of the object is well-formed. Confirmed live in a Colab run
+    (Groq output containing "they\\'re")."""
+    text = '{"has_hallucination": true, "hallucinated_claim": "they\\\'re one-way", "confidence": 0.8}'
+    action = parse_completion(text)
+    assert action is not None
+    assert action.hallucinated_claim == "they're one-way"
+
+
 def test_score_completion_rewards_correct_detection():
     text = json.dumps({
         "has_hallucination": True,
