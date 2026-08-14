@@ -1,3 +1,4 @@
+import json
 import os
 from pathlib import Path
 import sys
@@ -587,6 +588,65 @@ def world_model():
             else "continue_current_difficulty"
         ),
         "system_health": eval_data["system_feedback"]
+    }
+
+
+@app.get("/ablation/results")
+def ablation_results():
+    """Static-vs-adversarial GRPO training ablation, if it has been run.
+
+    See training/train_ablation.py — this is a real GPU training job (not
+    something the API server runs itself), so results only appear here
+    once results/grpo_static_summary.json and
+    results/grpo_adversarial_summary.json have been produced by running
+    that script (Colab or any CUDA box) and dropped into results/.
+    """
+    root = Path(__file__).parent.parent
+    paths = {
+        "static": root / "results" / "grpo_static_summary.json",
+        "adversarial": root / "results" / "grpo_adversarial_summary.json",
+    }
+    summaries = {}
+    for mode, path in paths.items():
+        if path.is_file():
+            try:
+                summaries[mode] = json.loads(path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                pass
+
+    if len(summaries) < 2:
+        return {
+            "available": False,
+            "have": list(summaries.keys()),
+            "instructions": (
+                "Run: python -m training.train_ablation --mode static  "
+                "and  python -m training.train_ablation --mode adversarial "
+                "(GPU required — see TRAINING.md), then drop the resulting "
+                "results/grpo_*_summary.json files here."
+            ),
+        }
+
+    static_s = summaries["static"]
+    adv_s = summaries["adversarial"]
+    tiers = sorted(set(static_s.get("per_tier_scores", {})) | set(adv_s.get("per_tier_scores", {})))
+    per_tier = [
+        {
+            "tier": t,
+            "static": static_s.get("per_tier_scores", {}).get(t),
+            "adversarial": adv_s.get("per_tier_scores", {}).get(t),
+        }
+        for t in tiers
+    ]
+    return {
+        "available": True,
+        "static": static_s,
+        "adversarial": adv_s,
+        "per_tier_comparison": per_tier,
+        "verdict": (
+            "adversarial_wins"
+            if adv_s.get("final_mean_reward", 0) > static_s.get("final_mean_reward", 0)
+            else "static_wins_or_tied"
+        ),
     }
 
 

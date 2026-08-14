@@ -118,6 +118,40 @@ Through GRPO training, the model acquired:
 
 ---
 
+## Ablation — Does Adversarial Self-Play Actually Help?
+
+The project's central claim is that training against an adversarially-expanding
+task distribution beats training on the fixed 73-sample curated pool alone.
+`training/train_ablation.py` tests that claim directly with two GRPO runs that
+are identical in every respect (base model, LoRA config, reward function,
+curriculum schedule) except the task distribution:
+
+| Condition | Task source |
+|---|---|
+| **static** (control) | Only `tasks.py`'s 73 curated samples, cycled |
+| **adversarial** (treatment) | Curated pool + unlimited `sample_generator.py` variety + a configurable fraction of genuinely LLM-generated adversarial hallucinations (a generator agent targeting the reference documents, same idea as the live environment's generator) |
+
+Requires a GPU (T4 or better) — this is a real training job, not something
+the API server runs on its own:
+
+```bash
+pip install unsloth trl peft bitsandbytes accelerate
+python -m training.train_ablation --mode static
+python -m training.train_ablation --mode adversarial --llm-fraction 0.3
+```
+
+Each run writes `results/grpo_<mode>_summary.json` (final mean reward,
+per-tier scores) and `results/grpo_<mode>_log.csv` (per-step reward). Once
+both summary files exist, the demo UI's **Ablation** tab (and `GET
+/ablation/results`) automatically renders a side-by-side comparison —
+mean reward, verdict, and a per-tier bar breakdown.
+
+The dataset-construction and reward-wiring logic (everything except the
+actual multi-hour GRPO training loop) is unit-tested — see
+`tests/test_ablation_dataset.py` and `tests/test_ablation_reward.py`.
+
+---
+
 ## Connection to Environment Design
 
 The training pipeline validates the environment design end-to-end:

@@ -1,0 +1,9 @@
+# GPU-only deps for training/train_ablation.py — not needed to run the server,
+# benchmarks, or test suite. Install these only when actually training in
+# Colab or on a CUDA box.
+unsloth
+trl
+peft
+bitsandbytes
+accelerate
+datasets

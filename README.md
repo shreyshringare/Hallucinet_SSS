@@ -294,6 +294,10 @@ The detector is markedly weaker on **Health**, **Language**, and **Fiction** que
 
 Curriculum logged **19 promotions across 90 training sessions**, stabilising at the Hard tier — the environment working as designed.
 
+### Ablation — Static Pool vs Adversarial Self-Play
+
+The project's central claim — that adversarial task generation beats training on the fixed curated pool — is tested directly, not just asserted. `training/train_ablation.py` runs two identical GRPO jobs that differ only in task-distribution source; see [TRAINING.md](./TRAINING.md#ablation--does-adversarial-self-play-actually-help) for setup and the demo's **Ablation** tab for a live comparison once both runs complete.
+
 ---
 
 ## Monitoring & Governance

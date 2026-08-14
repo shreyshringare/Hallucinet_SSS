@@ -177,10 +177,12 @@ body::before {
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 4px;
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 
 .tab {
-  flex: 1;
+  flex: 1 1 auto;
   padding: 8px 12px;
   border-radius: 7px;
   border: none;
@@ -330,7 +332,11 @@ select, input[type=text] {
   font-family: var(--font);
 }
 
-select:focus, input[type=text]:focus { border-color: var(--accent); }
+select:focus, input[type=text]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,0.25); }
+button:focus-visible, .tab:focus-visible, .task-pill:focus-visible, a:focus-visible {
+  outline: 2px solid var(--accent2);
+  outline-offset: 2px;
+}
 
 textarea {
   background: var(--bg);
@@ -347,7 +353,7 @@ textarea {
   font-family: var(--mono);
 }
 
-textarea:focus { border-color: var(--accent); }
+textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,0.25); }
 
 /* RANGE */
 input[type=range] { width: 100%; height: 4px; accent-color: var(--accent); margin: 8px 0; }
@@ -480,6 +486,46 @@ tr:hover td { background: rgba(59,130,246,0.04); }
 .progress-bar { height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; margin: 6px 0; }
 .progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
 
+/* ============ RESPONSIVE ============ */
+
+@media (max-width: 900px) {
+  .main { padding: 20px 16px; }
+  .header { padding: 0 16px; }
+
+  .hero { grid-template-columns: 1fr; padding: 22px 20px; }
+  .hero-stats { justify-content: flex-start; flex-wrap: wrap; }
+
+  .metrics-row { grid-template-columns: repeat(3, 1fr); }
+  .tutorial-steps { grid-template-columns: repeat(2, 1fr); }
+  .step-arrow { display: none; }
+
+  .grid-2,
+  .wm-grid,
+  .training-grid,
+  .endpoint-grid { grid-template-columns: 1fr; }
+
+  .breakdown-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 600px) {
+  .header { height: auto; flex-wrap: wrap; padding: 10px 14px; gap: 8px; }
+  .header-badges { order: 3; width: 100%; }
+
+  .hero-headline { font-size: 20px; }
+  .hero-stats { gap: 14px; }
+  .hero-stat-val { font-size: 22px; }
+
+  .metrics-row { grid-template-columns: repeat(2, 1fr); }
+  .tutorial-steps { grid-template-columns: 1fr; }
+  .breakdown-grid { grid-template-columns: repeat(2, 1fr); }
+
+  .tab { padding: 8px 10px; font-size: 11px; }
+
+  .card { padding: 16px; }
+  table { font-size: 11px; }
+  th, td { padding: 8px; }
+}
+
 </style>
 </head>
 <body>
@@ -587,6 +633,7 @@ tr:hover td { background: rgba(59,130,246,0.04); }
     <button class="tab" onclick="showTab('api', this)">⚡ API Reference</button>
     <button class="tab" onclick="showTab('oversight', this)">👁 Oversight</button>
     <button class="tab" onclick="showTab('taxonomy', this)">🧬 Taxonomy</button>
+    <button class="tab" onclick="showTab('ablation', this)">🔬 Ablation</button>
   </div>
 
   <!-- ===== DEMO TAB ===== -->
@@ -953,6 +1000,20 @@ tr:hover td { background: rgba(59,130,246,0.04); }
     </div>
   </div>
 
+  <!-- ===== ABLATION TAB ===== -->
+  <div id="tab-ablation" class="hidden">
+    <div class="card">
+      <div class="card-title"><span class="icon">🔬</span> Self-Play Ablation — Static Pool vs Adversarial Generation</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6">
+        Tests the core architectural claim: does training the detector against an adversarially-expanding
+        task distribution (generator agent + unlimited programmatic variation) beat training on the fixed
+        73-sample curated pool alone? Real GRPO training job — run via <code>python -m training.train_ablation</code>
+        (GPU required, see TRAINING.md). This panel reads <code>GET /ablation/results</code>.
+      </p>
+      <div id="ablation-content" style="color:var(--muted);text-align:center;padding:20px;font-family:var(--mono)">Loading ablation results...</div>
+    </div>
+  </div>
+
 </div><!-- /main -->
 
 <script>
@@ -965,7 +1026,7 @@ function selectTask(el, task) {
 }
 
 function showTab(name, btn) {
-  ["demo","training","leaderboard","worldmodel","api","oversight","taxonomy"].forEach(t => {
+  ["demo","training","leaderboard","worldmodel","api","oversight","taxonomy","ablation"].forEach(t => {
     document.getElementById("tab-"+t).classList.add("hidden");
   });
   document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
@@ -975,6 +1036,7 @@ function showTab(name, btn) {
   if (name === "oversight") loadOversight();
   if (name === "worldmodel") loadWorldModel();
   if (name === "taxonomy") loadTaxonomy();
+  if (name === "ablation") loadAblation();
 }
 
 async function loadSample() {
@@ -1284,6 +1346,68 @@ async function loadTaxonomy() {
     document.getElementById("taxonomy-content").innerHTML = html;
   } catch(e) {
     document.getElementById("taxonomy-content").innerText = "Error loading taxonomy: " + e.message;
+  }
+}
+
+async function loadAblation() {
+  const el = document.getElementById("ablation-content");
+  try {
+    const d = await fetch("/ablation/results").then(r => r.json());
+    if (!d.available) {
+      let html = `<div style="text-align:center;padding:30px 20px">`;
+      html += `<div style="font-size:32px;margin-bottom:12px">🔬</div>`;
+      html += `<div style="color:var(--text);font-weight:700;margin-bottom:8px">Ablation not run yet</div>`;
+      const have = d.have && d.have.length ? d.have.join(", ") : "none";
+      html += `<div style="font-size:11px;color:var(--muted);margin-bottom:14px">Results found for: ${have}</div>`;
+      html += `<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:left;font-family:var(--mono);font-size:11px;color:#9ca3af;white-space:pre-wrap">${d.instructions || ""}</div>`;
+      html += `</div>`;
+      el.innerHTML = html;
+      return;
+    }
+
+    const s = d.static, a = d.adversarial;
+    const verdictLabel = d.verdict === "adversarial_wins" ? "Adversarial self-play wins" : "Static pool wins or tied";
+    const verdictColor = d.verdict === "adversarial_wins" ? "var(--green)" : "var(--orange)";
+
+    let html = `<div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:20px">`;
+    html += `<div style="flex:1;min-width:220px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px">`;
+    html += `<div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:6px">STATIC (control)</div>`;
+    html += `<div style="font-size:28px;font-weight:800;color:var(--text)">${(s.final_mean_reward ?? 0).toFixed(3)}</div>`;
+    html += `<div style="font-size:10px;color:var(--muted)">mean reward · ${s.steps_trained ?? "—"} steps</div>`;
+    html += `</div>`;
+    html += `<div style="flex:1;min-width:220px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px">`;
+    html += `<div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:6px">ADVERSARIAL (treatment)</div>`;
+    html += `<div style="font-size:28px;font-weight:800;color:var(--accent2)">${(a.final_mean_reward ?? 0).toFixed(3)}</div>`;
+    html += `<div style="font-size:10px;color:var(--muted)">mean reward · ${a.steps_trained ?? "—"} steps</div>`;
+    html += `</div>`;
+    html += `</div>`;
+
+    html += `<div style="text-align:center;padding:10px;margin-bottom:20px;background:rgba(0,0,0,0.15);border-radius:8px;border:1px solid var(--border)">`;
+    html += `<span style="font-weight:700;color:${verdictColor}">${verdictLabel}</span>`;
+    html += `</div>`;
+
+    html += `<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px">Per-tier score comparison</div>`;
+    html += `<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">`;
+    for (const row of (d.per_tier_comparison || [])) {
+      const sv = row.static ?? 0, av = row.adversarial ?? 0;
+      const maxV = Math.max(sv, av, 0.01);
+      html += `<div>`;
+      html += `<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:3px"><span>${row.tier}</span><span>static ${sv.toFixed(3)} vs adversarial ${av.toFixed(3)}</span></div>`;
+      html += `<div style="display:flex;gap:4px;height:10px">`;
+      html += `<div style="width:${(sv/maxV*50)}%;background:var(--muted);border-radius:3px"></div>`;
+      html += `<div style="width:${(av/maxV*50)}%;background:var(--accent2);border-radius:3px"></div>`;
+      html += `</div></div>`;
+    }
+    html += `</div>`;
+
+    html += `<div style="display:flex;gap:16px;font-size:10px;color:var(--muted);font-family:var(--mono)">`;
+    html += `<span><span style="display:inline-block;width:8px;height:8px;background:var(--muted);border-radius:2px;margin-right:4px"></span>static</span>`;
+    html += `<span><span style="display:inline-block;width:8px;height:8px;background:var(--accent2);border-radius:2px;margin-right:4px"></span>adversarial</span>`;
+    html += `</div>`;
+
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerText = "Error loading ablation results: " + e.message;
   }
 }
 

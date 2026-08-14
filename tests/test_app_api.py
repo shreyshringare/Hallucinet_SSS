@@ -1,11 +1,18 @@
 """API smoke tests for the FastAPI server via TestClient (no network)."""
 
+import json
+import os
+
 import pytest
 from fastapi.testclient import TestClient
 
 from server.app import app
 
 client = TestClient(app)
+
+RESULTS_DIR = os.path.join(os.path.dirname(__file__), "..", "results")
+STATIC_SUMMARY = os.path.join(RESULTS_DIR, "grpo_static_summary.json")
+ADVERSARIAL_SUMMARY = os.path.join(RESULTS_DIR, "grpo_adversarial_summary.json")
 
 
 def test_health():
@@ -70,3 +77,39 @@ def test_invalid_task_id_handled():
     r = client.post("/reset", json={"task_id": "nonexistent"})
     # Server should either 4xx or fall back — never 500.
     assert r.status_code < 500
+
+
+def test_ablation_results_unavailable_by_default():
+    r = client.get("/ablation/results")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["available"] is False
+    assert "instructions" in body
+
+
+def test_ablation_results_available_when_both_summaries_present(tmp_path):
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    static_existed = os.path.isfile(STATIC_SUMMARY)
+    adv_existed = os.path.isfile(ADVERSARIAL_SUMMARY)
+    try:
+        with open(STATIC_SUMMARY, "w", encoding="utf-8") as f:
+            json.dump(
+                {"per_tier_scores": {"easy": 0.5}, "final_mean_reward": 0.4, "steps_trained": 10},
+                f,
+            )
+        with open(ADVERSARIAL_SUMMARY, "w", encoding="utf-8") as f:
+            json.dump(
+                {"per_tier_scores": {"easy": 0.6}, "final_mean_reward": 0.5, "steps_trained": 10},
+                f,
+            )
+        r = client.get("/ablation/results")
+        assert r.status_code == 200
+        body = r.json()
+        assert body["available"] is True
+        assert body["verdict"] == "adversarial_wins"
+        assert body["per_tier_comparison"][0]["tier"] == "easy"
+    finally:
+        if not static_existed and os.path.isfile(STATIC_SUMMARY):
+            os.remove(STATIC_SUMMARY)
+        if not adv_existed and os.path.isfile(ADVERSARIAL_SUMMARY):
+            os.remove(ADVERSARIAL_SUMMARY)
