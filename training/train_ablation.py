@@ -93,7 +93,7 @@ REFERENCE:
                     model=model,
                     messages=[{"role": "user", "content": GEN_PROMPT.format(reference=ref_sample["reference_document"])}],
                     temperature=1.0,
-                    max_tokens=200,
+                    max_tokens=350,
                 )
                 text = resp.choices[0].message.content.strip()
                 data = _extract_json(text)
