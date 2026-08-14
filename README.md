@@ -248,6 +248,44 @@ Reports detection accuracy, mean grader score, and Expected Calibration Error; p
 
 The detector generalizes to a benchmark it was never tuned on, without an LLM judge in the scoring loop.
 
+### External Benchmark — TruthfulQA
+
+[TruthfulQA](https://github.com/sylinrl/TruthfulQA) (Lin, Hilton & Evans, 2022) is built specifically around questions that trigger confidently-wrong answers from common misconceptions — closer to this project's actual thesis than a generic QA-hallucination set. Each question ships a real topic `Category` (Law, Health, Misconceptions, ...) and `Type` (Adversarial / Non-Adversarial), so `benchmarks/benchmark_truthfulqa.py` gets a genuine error-taxonomy breakdown for free instead of an invented one:
+
+```bash
+python benchmarks/benchmark_truthfulqa.py --limit 100
+```
+
+**Results — 100 TruthfulQA samples, zero-shot:**
+
+| Model | Detection Acc | Mean Grader Score | ECE | Calibration |
+|---|---:|---:|---:|---|
+| llama-3.1-8b-instant | 0.810 | 0.804 | 0.126 | Overconfident |
+
+**Accuracy by topic category (N ≥ 3):**
+
+| Category | N | Accuracy |
+|---|---:|---:|
+| Misconceptions | 12 | 1.000 |
+| Law | 9 | 0.778 |
+| Health | 9 | 0.556 |
+| Sociology | 6 | 0.833 |
+| Economics | 5 | 0.800 |
+| Education | 5 | 1.000 |
+| Misquotations | 5 | 1.000 |
+| Fiction | 5 | 0.600 |
+| Language | 4 | 0.500 |
+| Proverbs | 3 | 0.667 |
+
+**Accuracy by adversarial type:**
+
+| Type | N | Accuracy |
+|---|---:|---:|
+| Adversarial | 52 | 0.788 |
+| Non-Adversarial | 48 | 0.833 |
+
+The detector is markedly weaker on **Health**, **Language**, and **Fiction** questions, and — as expected of a dataset engineered to elicit confident falsehoods — the gap between Adversarial and Non-Adversarial accuracy is real but modest (0.788 vs 0.833), which the ECE (0.126, overconfident) corroborates: the detector's confidence outruns its actual accuracy more on this benchmark than on HaluEval. That is a concrete, falsifiable weakness rather than a claimed strength — useful signal for where curriculum tasks should add coverage next.
+
 | Task | Baseline | Trained | Improvement |
 |---|---:|---:|---:|
 | Easy | 0.454 | 0.647 | +42.5% |

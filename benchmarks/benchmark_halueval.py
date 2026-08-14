@@ -95,7 +95,7 @@ def query_detector(client: OpenAI, model: str, sample: dict) -> HallucinationAct
         text = text.strip("`").removeprefix("json").strip()
     data = json.loads(text)
     confidence = float(data.get("confidence", 0.5))
-    confidence = min(max(confidence, 0.0), 0.999)  # schema requires 0 <= confidence < 1
+    confidence = min(max(confidence, 0.001), 0.999)  # schema requires 0 < confidence < 1
     return HallucinationAction(
         has_hallucination=bool(data.get("has_hallucination")),
         hallucinated_claim=data.get("hallucinated_claim"),
