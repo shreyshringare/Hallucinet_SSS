@@ -240,6 +240,14 @@ python benchmarks/benchmark_halueval.py --limit 100
 
 Reports detection accuracy, mean grader score, and Expected Calibration Error; per-sample results land in `results/halueval_results.csv`.
 
+**Results — 100 HaluEval QA samples, zero-shot:**
+
+| Model | Detection Acc | Mean Grader Score | ECE | Calibration |
+|---|---:|---:|---:|---|
+| llama-3.3-70b-versatile | 0.880 | 0.868 | 0.056 | Well calibrated |
+
+The detector generalizes to a benchmark it was never tuned on, without an LLM judge in the scoring loop.
+
 | Task | Baseline | Trained | Improvement |
 |---|---:|---:|---:|
 | Easy | 0.454 | 0.647 | +42.5% |
