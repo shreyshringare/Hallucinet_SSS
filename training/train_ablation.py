@@ -76,10 +76,8 @@ def make_generator_fn(client, model: str, max_retries: int = 3):
     GEN_PROMPT = """Given this REFERENCE document, write a RESPONSE that subtly misstates one fact from it \
 (a wrong number, date, name, or a negation) while sounding equally confident and fluent. \
 Do not repeat the reference text in your answer. \
-Reply with strict JSON only, using short values:
-{{"llm_response": "<your subtly wrong version, one or two sentences>", \
-"ground_truth_hallucinated_phrases": ["<the wrong phrase you inserted>"], \
-"ground_truth_corrections": ["<what the reference actually says>"]}}
+Reply with ONE compact single-line JSON object, no markdown fences, no indentation, no extra whitespace, using short values:
+{{"llm_response": "<your subtly wrong version, one short sentence>", "ground_truth_hallucinated_phrases": ["<the wrong phrase>"], "ground_truth_corrections": ["<the correct value>"]}}
 
 REFERENCE:
 {reference}"""
@@ -93,7 +91,7 @@ REFERENCE:
                     model=model,
                     messages=[{"role": "user", "content": GEN_PROMPT.format(reference=ref_sample["reference_document"])}],
                     temperature=1.0,
-                    max_tokens=350,
+                    max_tokens=500,
                 )
                 text = resp.choices[0].message.content.strip()
                 data = _extract_json(text)
