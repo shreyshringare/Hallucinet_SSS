@@ -7,7 +7,7 @@ gen_rewards = []
 combined = []
 tasks = []
 
-with open("adversarial_results.csv") as f:
+with open("results/adversarial_results.csv") as f:
     reader = csv.DictReader(f)
     for row in reader:
         sessions.append(int(row["session"]))

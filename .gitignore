@@ -8,8 +8,16 @@ __pycache__/
 dist/
 build/
 .pytest_cache/
-adversarial_reward_curve.png
-adversarial_reward_curve.png
-*.png
-adversarial_reward_curve.png
-*.png
+
+# benchmark data cache
+benchmarks/qa_data.json
+
+# runtime artifacts
+leaderboard.json
+run_output.txt
+test_run_output.txt
+results/*.csv
+results/*.png
+!results/adversarial_results.csv
+!results/adversarial_results_groq_run.csv
+!results/adversarial_reward_curve.png

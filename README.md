@@ -10,6 +10,7 @@ pinned: false
 # HalluciNet Adversarial
 ## Multi-Agent Self-Improving Hallucination Detection
 
+[![CI](https://github.com/rushikeshbathe096/HalluciNet/actions/workflows/ci.yml/badge.svg)](https://github.com/rushikeshbathe096/HalluciNet/actions/workflows/ci.yml)
 [![OpenEnv Compatible](https://img.shields.io/badge/OpenEnv-2.0-success)]()
 [![Theme 1: Multi-Agent](https://img.shields.io/badge/Theme-Multi--Agent-blue)]()
 [![Theme 3: World Modeling](https://img.shields.io/badge/Theme-World--Modeling-orange)]()
@@ -51,6 +52,14 @@ A model that produces this with 0.94 confidence is not just incorrect — it is 
 Current benchmarks test correctness. Nobody trains models to know **when they might be wrong.**
 
 That is the capability gap HalluciNet closes.
+
+---
+
+## Why This Design
+
+Most hallucination-detection pipelines use an LLM as the judge — GPT-4 scores whether another model's answer is faithful. That approach is expensive, non-reproducible (judge outputs drift between runs and model versions), and gameable (the policy learns to please the judge, not to detect errors).
+
+HalluciNet makes the opposite trade: a **fully deterministic grader**. Detection, phrase identification, fact correction, and confidence calibration are scored by pure string/logic functions with known anti-cheat baselines (always-flag scores 0.30, random scores 0.39, genuine detection scores 0.90+). The cost is less linguistic flexibility than an LLM judge; the payoff is a reward signal that is reproducible bit-for-bit, free to compute at RL scale, and impossible to sweet-talk. Combined with a programmatic sample generator (the task distribution can never be memorized) and adversarial self-play (a generator agent continuously manufactures harder failures), the environment stays honest as the detector improves — no human relabeling, no judge API bills, no reward hacking.
 
 ---
 
@@ -221,6 +230,16 @@ score              = 0.940    ← EXCELLENT
 
 The trained 3B model **acquires Hard-task capability** that the base 3B cannot attempt, and **outperforms the 8B model on Medium** while being 2.7× smaller.
 
+### External Benchmark — HaluEval
+
+To validate against a public benchmark rather than only our own task tiers, `benchmarks/benchmark_halueval.py` evaluates any detector model on [HaluEval](https://github.com/RUCAIBox/HaluEval) (Li et al., EMNLP 2023) QA data, scored with the **same deterministic grader** used in RL training — so external numbers are directly comparable to the tier scores above:
+
+```bash
+python benchmarks/benchmark_halueval.py --limit 100
+```
+
+Reports detection accuracy, mean grader score, and Expected Calibration Error; per-sample results land in `results/halueval_results.csv`.
+
 | Task | Baseline | Trained | Improvement |
 |---|---:|---:|---:|
 | Easy | 0.454 | 0.647 | +42.5% |
@@ -308,7 +327,7 @@ python grader.py
 **Step 8 — Run adversarial self-play (optional, needs GROQ_API_KEY)**
 ```bash
 python inference.py
-# Runs 6 sessions, logs rewards, saves adversarial_results.csv
+# Runs 6 sessions, logs rewards, saves results/adversarial_results.csv
 ```
 
 ---

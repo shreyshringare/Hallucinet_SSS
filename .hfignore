@@ -4,6 +4,5 @@ __pycache__/
 *.pyo
 .env
 .git/
-hallucinet_adversarial/
 *.egg-info/
 uv.lock

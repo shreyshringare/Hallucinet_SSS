@@ -186,11 +186,12 @@ def main() -> None:
     print(f"{'=' * 60}\n", flush=True)
 
     if session_results:
-        with open("adversarial_results.csv", "w", newline="", encoding="utf-8") as f:
+        os.makedirs("results", exist_ok=True)
+        with open("results/adversarial_results.csv", "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=session_results[0].keys())
             writer.writeheader()
             writer.writerows(session_results)
-        print("[INFO] Results saved to adversarial_results.csv", flush=True)
+        print("[INFO] Results saved to results/adversarial_results.csv", flush=True)
     else:
         print("[INFO] No session results to save", flush=True)
 

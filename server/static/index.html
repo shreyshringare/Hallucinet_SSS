@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HalluciNet Adversarial — Round 2</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --bg: #06080f;
+  --bg2: #0c1018;
+  --bg3: #111827;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #e8eaf0;
+  --muted: #6b7280;
+  --accent: #3b82f6;
+  --accent2: #06b6d4;
+  --green: #10b981;
+  --red: #ef4444;
+  --orange: #f97316;
+  --yellow: #f59e0b;
+  --purple: #8b5cf6;
+  --font: 'Syne', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* GRID BACKGROUND */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* HEADER */
+.header {
+  position: relative;
+  z-index: 10;
+  border-bottom: 1px solid var(--border);
+  background: rgba(6,8,15,0.95);
+  backdrop-filter: blur(12px);
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+
+.logo-area { display: flex; align-items: center; gap: 16px; }
+
+.logo-icon {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+
+.logo-text h1 {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #fff 0%, var(--accent2) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.logo-text p { font-size: 11px; color: var(--muted); font-family: var(--mono); margin-top: 1px; }
+
+.header-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.badge {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+  font-family: var(--mono);
+  letter-spacing: 0.3px;
+  border: 1px solid;
+}
+
+.badge-blue { background: rgba(59,130,246,0.1); color: #60a5fa; border-color: rgba(59,130,246,0.3); }
+.badge-cyan { background: rgba(6,182,212,0.1); color: #22d3ee; border-color: rgba(6,182,212,0.3); }
+.badge-purple { background: rgba(139,92,246,0.1); color: #a78bfa; border-color: rgba(139,92,246,0.3); }
+.badge-green { background: rgba(16,185,129,0.1); color: #34d399; border-color: rgba(16,185,129,0.3); }
+.badge-orange { background: rgba(249,115,22,0.1); color: #fb923c; border-color: rgba(249,115,22,0.3); }
+
+.pulse { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--green); margin-right: 5px; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+/* MAIN */
+.main { position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; padding: 24px 24px; }
+
+/* HERO BANNER */
+.hero {
+  background: linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(6,182,212,0.05) 50%, rgba(139,92,246,0.08) 100%);
+  border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 16px;
+  padding: 28px 32px;
+  margin-bottom: 20px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 24px;
+  align-items: center;
+}
+
+.hero-title {
+  font-size: 13px;
+  font-family: var(--mono);
+  color: var(--accent2);
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.hero-headline {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+  margin-bottom: 10px;
+}
+
+.hero-headline span { color: var(--accent2); }
+
+.hero-desc { font-size: 13px; color: var(--muted); line-height: 1.6; max-width: 560px; }
+
+.hero-stats { display: flex; gap: 20px; }
+
+.hero-stat { text-align: center; }
+.hero-stat-val { font-size: 28px; font-weight: 800; font-family: var(--mono); color: var(--accent2); line-height: 1; }
+.hero-stat-lbl { font-size: 10px; color: var(--muted); margin-top: 4px; letter-spacing: 0.5px; text-transform: uppercase; }
+
+/* METRICS ROW */
+.metrics-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.metric-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  transition: border-color 0.2s;
+}
+
+.metric-card:hover { border-color: var(--border2); }
+.metric-val { font-size: 22px; font-weight: 700; font-family: var(--mono); color: var(--accent); }
+.metric-lbl { font-size: 10px; color: var(--muted); margin-top: 4px; letter-spacing: 0.5px; text-transform: uppercase; }
+
+/* TABS */
+.tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 20px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.tab {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.tab:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+.tab.active { background: var(--accent); color: white; }
+
+/* CARDS */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title .icon { font-size: 14px; }
+
+/* TUTORIAL SECTION */
+.tutorial-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.tutorial-step {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  position: relative;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.tutorial-step:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+.step-num {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--mono);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 10px;
+}
+
+.step-title { font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+.step-desc { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+.step-arrow {
+  position: absolute;
+  right: -18px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 16px;
+  z-index: 2;
+}
+
+/* GRID 2 */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+
+/* TASK PILLS */
+.task-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+
+.task-pill {
+  padding: 5px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 600;
+  font-family: var(--font);
+}
+
+.task-pill.active { background: var(--accent); border-color: var(--accent); color: white; }
+.task-pill:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+
+/* SAMPLE BOX */
+.sample-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #9ca3af;
+  min-height: 80px;
+  max-height: 120px;
+  overflow-y: auto;
+  font-family: var(--mono);
+}
+
+.sample-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; font-family: var(--mono); }
+
+/* AGENT CARDS */
+.agent-card { border-radius: 12px; padding: 18px; border: 1px solid; }
+.gen-card { background: rgba(249,115,22,0.04); border-color: rgba(249,115,22,0.2); }
+.det-card { background: rgba(16,185,129,0.04); border-color: rgba(16,185,129,0.2); }
+
+.agent-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.agent-icon { font-size: 20px; }
+.agent-name { font-size: 13px; font-weight: 700; }
+.agent-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.gen-card .agent-name { color: var(--orange); }
+.det-card .agent-name { color: var(--green); }
+
+/* FORM ELEMENTS */
+label { display: block; font-size: 10px; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; font-family: var(--mono); }
+
+select, input[type=text] {
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: 7px;
+  color: var(--text);
+  padding: 8px 11px;
+  font-size: 12px;
+  width: 100%;
+  outline: none;
+  transition: border 0.2s;
+  margin-bottom: 10px;
+  font-family: var(--font);
+}
+
+select:focus, input[type=text]:focus { border-color: var(--accent); }
+
+textarea {
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: 7px;
+  color: var(--text);
+  padding: 9px 11px;
+  font-size: 12px;
+  width: 100%;
+  resize: vertical;
+  outline: none;
+  line-height: 1.5;
+  transition: border 0.2s;
+  font-family: var(--mono);
+}
+
+textarea:focus { border-color: var(--accent); }
+
+/* RANGE */
+input[type=range] { width: 100%; height: 4px; accent-color: var(--accent); margin: 8px 0; }
+
+/* BUTTONS */
+.btn {
+  padding: 9px 18px;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font);
+}
+
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:hover { background: #2563eb; transform: translateY(-1px); }
+.btn-danger { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+.btn-danger:hover { background: rgba(239,68,68,0.25); }
+.btn-success { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+.btn-success:hover { background: rgba(16,185,129,0.25); }
+.btn-debate { background: rgba(249,115,22,0.15); color: var(--orange); border: 1px solid rgba(249,115,22,0.3); }
+.btn-debate:hover { background: rgba(249,115,22,0.25); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+.btn-full { width: 100%; justify-content: center; }
+
+/* SCORE */
+.score-big { font-size: 40px; font-weight: 800; font-family: var(--mono); }
+.score-excellent { color: var(--green); }
+.score-good { color: var(--accent); }
+.score-partial { color: var(--yellow); }
+.score-bad { color: var(--red); }
+
+/* BREAKDOWN */
+.breakdown-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin: 12px 0; }
+.breakdown-item { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; }
+.breakdown-val { font-size: 16px; font-weight: 700; color: var(--accent); font-family: var(--mono); }
+.breakdown-lbl { font-size: 9px; color: var(--muted); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* FEEDBACK */
+.feedback-box { background: var(--bg); border-left: 2px solid var(--accent); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 12px; line-height: 1.6; margin-top: 10px; color: #9ca3af; font-family: var(--mono); }
+
+/* VERDICT */
+.verdict { padding: 12px; border-radius: 8px; text-align: center; font-size: 15px; font-weight: 700; margin: 12px 0; }
+.verdict-win { background: rgba(16,185,129,0.1); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+.verdict-lose { background: rgba(239,68,68,0.1); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+.verdict-pending { background: rgba(59,130,246,0.1); color: var(--accent); border: 1px solid rgba(59,130,246,0.3); }
+
+/* LEADERBOARD */
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th { background: var(--bg); color: var(--muted); padding: 10px 12px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); font-family: var(--mono); }
+td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: #d1d5db; }
+tr:hover td { background: rgba(59,130,246,0.04); }
+.rank-badge { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; font-size: 11px; font-weight: 700; }
+.rank-1 { background: #f59e0b; color: #000; }
+.rank-2 { background: #9ca3af; color: #000; }
+.rank-3 { background: #92400e; color: #fff; }
+.trained-tag { background: rgba(16,185,129,0.15); color: var(--green); padding: 2px 7px; border-radius: 10px; font-size: 10px; font-family: var(--mono); }
+
+/* SPINNER */
+.spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(255,255,255,0.2); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* INFO ROW */
+.info-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.info-row:last-child { border: none; }
+.info-key { color: var(--muted); font-family: var(--mono); }
+.info-val { color: var(--text); font-weight: 500; }
+
+/* SECTION TITLE */
+.section-title { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; margin-top: 16px; font-family: var(--mono); }
+
+/* HIDDEN */
+.hidden { display: none; }
+
+/* ENDPOINT GRID */
+.endpoint-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.endpoint-item { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+.endpoint-method { font-size: 9px; font-weight: 700; font-family: var(--mono); padding: 2px 6px; border-radius: 4px; margin-right: 6px; }
+.method-get { background: rgba(16,185,129,0.15); color: var(--green); }
+.method-post { background: rgba(249,115,22,0.15); color: var(--orange); }
+.endpoint-path { font-size: 11px; font-family: var(--mono); color: var(--accent2); }
+.endpoint-desc { font-size: 10px; color: var(--muted); margin-top: 4px; }
+
+/* NEW ENDPOINTS HIGHLIGHT */
+.new-tag { font-size: 9px; background: rgba(139,92,246,0.15); color: #a78bfa; padding: 1px 6px; border-radius: 4px; font-family: var(--mono); margin-left: 6px; }
+
+/* WORLD MODEL */
+.wm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.wm-section { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.wm-title { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; font-family: var(--mono); }
+
+/* ELO DISPLAY */
+.elo-bars { display: flex; gap: 12px; align-items: flex-end; height: 80px; margin: 12px 0; }
+.elo-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+.elo-bar { width: 100%; border-radius: 4px 4px 0 0; min-height: 8px; transition: height 0.5s ease; }
+.elo-bar-det { background: linear-gradient(180deg, var(--green), rgba(16,185,129,0.5)); }
+.elo-bar-gen { background: linear-gradient(180deg, var(--orange), rgba(249,115,22,0.5)); }
+.elo-bar-val { font-size: 12px; font-weight: 700; font-family: var(--mono); }
+.elo-bar-lbl { font-size: 10px; color: var(--muted); }
+
+/* TRAINING SUMMARY */
+.training-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.training-col { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+.training-col-title { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; font-family: var(--mono); }
+.training-before { border-left: 2px solid var(--red); }
+.training-after { border-left: 2px solid var(--green); }
+
+/* CURRICULUM FLOW */
+.curriculum-flow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 12px 0; }
+.curr-level { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; font-family: var(--mono); border: 1px solid; }
+.curr-easy { background: rgba(16,185,129,0.1); color: var(--green); border-color: rgba(16,185,129,0.3); }
+.curr-medium { background: rgba(59,130,246,0.1); color: var(--accent); border-color: rgba(59,130,246,0.3); }
+.curr-hard { background: rgba(249,115,22,0.1); color: var(--orange); border-color: rgba(249,115,22,0.3); }
+.curr-expert { background: rgba(239,68,68,0.1); color: var(--red); border-color: rgba(239,68,68,0.3); }
+.curr-arrow { color: var(--muted); font-size: 14px; }
+
+/* CODE BLOCK */
+.code-block { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px; font-family: var(--mono); font-size: 11px; line-height: 1.8; color: #9ca3af; overflow-x: auto; }
+.code-comment { color: #4b5563; }
+.code-key { color: var(--accent2); }
+.code-val { color: #a78bfa; }
+.code-str { color: #34d399; }
+
+/* PROGRESS BAR */
+.progress-bar { height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; margin: 6px 0; }
+.progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo-area">
+    <div class="logo-icon">🔍</div>
+    <div class="logo-text">
+      <h1>HalluciNet Adversarial</h1>
+      <p><span class="pulse"></span>live · multi-agent hallucination detection · round 2</p>
+    </div>
+  </div>
+  <div class="header-badges">
+    <span class="badge badge-blue">Theme 1: Multi-Agent</span>
+    <span class="badge badge-cyan">Theme 3: World Modeling</span>
+    <span class="badge badge-purple">Theme 4: Self-Improvement</span>
+    <span class="badge badge-green">OpenEnv 2.0 ✓</span>
+    <span class="badge badge-orange">GRPO Trained ✓</span>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div>
+      <div class="hero-title">// adversarial rl environment</div>
+      <div class="hero-headline">Two agents compete.<br><span>One lies. One detects.</span></div>
+      <div class="hero-desc">Generator creates subtle hallucinations. Detector catches them with calibrated confidence. Oversight monitors the system. Curriculum escalates difficulty. No LLM judge — fully deterministic reward.</div>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-val">5</div>
+        <div class="hero-stat-lbl">Difficulty Levels</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val" id="stat-samples">73</div>
+        <div class="hero-stat-lbl">Curated Samples</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val" id="stat-score">—</div>
+        <div class="hero-stat-lbl">Last Score</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="tutorial-steps">
+    <div class="tutorial-step">
+      <div class="step-num">1</div>
+      <div class="step-title">Load Sample</div>
+      <div class="step-desc">Choose difficulty (Easy → Adversarial). Load a reference document and an LLM response that may contain errors.</div>
+      <div class="step-arrow">→</div>
+    </div>
+    <div class="tutorial-step">
+      <div class="step-num">2</div>
+      <div class="step-title">Generator Acts</div>
+      <div class="step-desc">Optionally write a hallucination to fool the detector. Generator is rewarded when detector misses it.</div>
+      <div class="step-arrow">→</div>
+    </div>
+    <div class="tutorial-step">
+      <div class="step-num">3</div>
+      <div class="step-title">Detector Responds</div>
+      <div class="step-desc">Submit detection — flag the hallucination, quote the wrong phrase, provide the correct fact. Confidence calibration matters.</div>
+      <div class="step-arrow">→</div>
+    </div>
+    <div class="tutorial-step">
+      <div class="step-num">4</div>
+      <div class="step-title">Debate + Oversight</div>
+      <div class="step-desc">Generator defends its response. Detector re-evaluates. Oversight tracks patterns across episodes. ELO updates.</div>
+    </div>
+  </div>
+
+  <!-- METRICS ROW -->
+  <div class="metrics-row">
+    <div class="metric-card">
+      <div class="metric-val" id="met-elo-det">1000</div>
+      <div class="metric-lbl">Detector ELO</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val" id="met-elo-gen">1000</div>
+      <div class="metric-lbl">Generator ELO</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val" id="met-rounds">0</div>
+      <div class="metric-lbl">Total Rounds</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val" id="met-reliability">—</div>
+      <div class="metric-lbl">Reliability Score</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val" id="met-episodes">0</div>
+      <div class="metric-lbl">Episodes Monitored</div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('demo', this)">🎮 Demo</button>
+    <button class="tab" onclick="showTab('training', this)">📈 Training Results</button>
+    <button class="tab" onclick="showTab('leaderboard', this)">🏆 Leaderboard</button>
+    <button class="tab" onclick="showTab('worldmodel', this)">🌍 World Model</button>
+    <button class="tab" onclick="showTab('api', this)">⚡ API Reference</button>
+    <button class="tab" onclick="showTab('oversight', this)">👁 Oversight</button>
+    <button class="tab" onclick="showTab('taxonomy', this)">🧬 Taxonomy</button>
+  </div>
+
+  <!-- ===== DEMO TAB ===== -->
+  <div id="tab-demo">
+    <div class="card">
+      <div class="card-title"><span class="icon">📋</span> Sample Loader
+        <span style="margin-left:auto">
+          <button class="btn btn-primary" onclick="loadSample()" id="load-btn" style="font-size:12px;padding:7px 16px;">Load Sample</button>
+        </span>
+      </div>
+      <div class="task-pills">
+        <button class="task-pill active" onclick="selectTask(this,'easy')">Easy · 10</button>
+        <button class="task-pill" onclick="selectTask(this,'medium')">Medium · 12</button>
+        <button class="task-pill" onclick="selectTask(this,'hard')">Hard · 19</button>
+        <button class="task-pill" onclick="selectTask(this,'expert')">Expert · 20</button>
+        <button class="task-pill" onclick="selectTask(this,'adversarial')">Adversarial · 12</button>
+      </div>
+      <div class="grid-2">
+        <div>
+          <div class="sample-label">Reference Document (Ground Truth)</div>
+          <div class="sample-box" id="ref-box">Click "Load Sample" to begin. Choose a difficulty level above.</div>
+        </div>
+        <div>
+          <div class="sample-label">LLM Response (Evaluate This)</div>
+          <div class="sample-box" id="llm-box">The LLM response will appear here. Find the hallucination.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <!-- GENERATOR -->
+      <div class="agent-card gen-card">
+        <div class="agent-header">
+          <div class="agent-icon">🔥</div>
+          <div>
+            <div class="agent-name">Generator Agent</div>
+            <div class="agent-sub">Creates hallucinations to fool the detector</div>
+          </div>
+        </div>
+        <label>Error Type</label>
+        <select id="err-type">
+          <option value="year_swap">Year Swap — wrong dates</option>
+          <option value="name_swap">Name Swap — wrong person</option>
+          <option value="number_swap">Number Swap — digit errors</option>
+          <option value="negation">Negation Trap — flipped meaning</option>
+          <option value="entity_flip">Entity Flip — wrong subject</option>
+          <option value="unit_shift">Unit Shift — wrong units</option>
+          <option value="partial_truth">Partial Truth — mixed facts</option>
+        </select>
+        <label>Hallucinated Response</label>
+        <textarea id="gen-text" rows="3" placeholder="Write a subtle hallucination here to fool the detector..."></textarea>
+        <div style="margin:10px 0">
+          <label>Generator Confidence: <span id="gc-val" style="color:var(--orange);font-family:var(--mono)">0.80</span></label>
+          <input type="range" id="gen-conf" min="0.01" max="0.99" step="0.01" value="0.8"
+            oninput="document.getElementById('gc-val').innerText=parseFloat(this.value).toFixed(2)">
+        </div>
+        <button class="btn btn-danger btn-full" onclick="runGenerator()" id="gen-btn">🔥 Generate Hallucination</button>
+        <div id="gen-result" class="hidden" style="margin-top:12px">
+          <div class="score-big" id="gen-score" style="text-align:center;margin-bottom:8px;font-size:28px"></div>
+          <div class="feedback-box" id="gen-feedback"></div>
+        </div>
+      </div>
+
+      <!-- DETECTOR -->
+      <div class="agent-card det-card">
+        <div class="agent-header">
+          <div class="agent-icon">🛡️</div>
+          <div>
+            <div class="agent-name">Detector Agent</div>
+            <div class="agent-sub">Catches hallucinations with calibrated confidence</div>
+          </div>
+        </div>
+        <label>Hallucinated Claim (leave blank if clean)</label>
+        <input type="text" id="det-claim" placeholder="Quote the exact wrong phrase...">
+        <label>Correct Fact from Reference</label>
+        <input type="text" id="det-fact" placeholder="What does the reference actually say?">
+        <div style="margin:10px 0">
+          <label>Detector Confidence: <span id="dc-val" style="color:var(--green);font-family:var(--mono)">0.80</span></label>
+          <input type="range" id="det-conf" min="0.01" max="0.99" step="0.01" value="0.8"
+            oninput="document.getElementById('dc-val').innerText=parseFloat(this.value).toFixed(2)">
+        </div>
+        <button class="btn btn-success btn-full" onclick="runDetector()" id="det-btn">🛡️ Submit Detection</button>
+        <div id="det-result" class="hidden" style="margin-top:12px">
+          <div style="text-align:center;margin-bottom:8px">
+            <div class="score-big" id="det-score"></div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;font-family:var(--mono)">Detector Score</div>
+          </div>
+          <div class="breakdown-grid" id="det-breakdown"></div>
+          <div class="feedback-box" id="det-feedback"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEBATE SECTION -->
+    <div id="debate-section" class="hidden">
+      <div class="card" style="border-color:rgba(249,115,22,0.3)">
+        <div class="card-title"><span class="icon">⚔️</span> Debate Round — Generator Defense</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.6">Generator gets one chance to defend its response. Detector re-evaluates with new information. Ground truth adjudicates. This is <strong style="color:var(--text)">multi-step reasoning</strong> — state persists across turns.</p>
+        <button class="btn btn-debate btn-full" id="debate-btn" onclick="runDebate()">⚔️ Trigger Debate Round</button>
+        <div id="debate-result" class="hidden" style="margin-top:12px"></div>
+      </div>
+    </div>
+
+    <!-- VERDICT -->
+    <div id="verdict-box" class="hidden">
+      <div class="verdict verdict-pending" id="verdict-text"></div>
+      <div style="text-align:center;font-size:11px;color:var(--muted);margin-top:8px;font-family:var(--mono)">
+        Generator reward: <span id="g-reward" style="color:var(--orange);font-weight:600"></span>
+        &nbsp;·&nbsp;
+        Detector reward: <span id="d-reward" style="color:var(--green);font-weight:600"></span>
+        &nbsp;·&nbsp;
+        ELO updated: <span id="elo-update" style="color:var(--accent)">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TRAINING TAB ===== -->
+  <div id="tab-training" class="hidden">
+    <div class="card">
+      <div class="card-title"><span class="icon">📈</span> GRPO Training Results — Qwen2.5-3B</div>
+      <div class="curriculum-flow">
+        <div class="curr-level curr-easy">easy</div>
+        <div class="curr-arrow">→ promoted</div>
+        <div class="curr-level curr-medium">medium</div>
+        <div class="curr-arrow">→ promoted</div>
+        <div class="curr-level curr-hard">hard</div>
+        <div class="curr-arrow">→ tried</div>
+        <div class="curr-level curr-expert">expert</div>
+        <div class="curr-arrow">→ demoted (correct)</div>
+        <div class="curr-level curr-hard">hard</div>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6;font-family:var(--mono)">// 90 training steps · 3 epochs · 120 samples · Tesla T4 · GRPO via Unsloth</p>
+
+      <div class="training-grid">
+        <div class="training-col training-before">
+          <div class="training-col-title">Before Training — Baseline</div>
+          <div class="info-row"><span class="info-key">model</span><span class="info-val">qwen2.5-3b-baseline</span></div>
+          <div class="info-row"><span class="info-key">medium_reward</span><span style="color:var(--red);font-weight:600;font-family:var(--mono)">0.9490</span></div>
+          <div class="info-row"><span class="info-key">finding</span><span class="info-val" style="font-size:11px">Reward ceiling — exploiting JSON format</span></div>
+          <div class="info-row"><span class="info-key">curriculum</span><span class="info-val">easy (starting level)</span></div>
+        </div>
+        <div class="training-col training-after">
+          <div class="training-col-title">After Training — GRPO</div>
+          <div class="info-row"><span class="info-key">model</span><span class="info-val">qwen2.5-3b-grpo</span></div>
+          <div class="info-row"><span class="info-key">medium_reward</span><span style="color:var(--green);font-weight:600;font-family:var(--mono)">0.774</span></div>
+          <div class="info-row"><span class="info-key">hard_reward</span><span style="color:var(--green);font-weight:600;font-family:var(--mono)">0.729</span></div>
+          <div class="info-row"><span class="info-key">curriculum</span><span style="color:var(--orange);font-weight:600">hard (19 promotions)</span></div>
+        </div>
+      </div>
+
+      <div class="section-title">Per-Task Performance</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px">
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px">
+          <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:6px">easy</div>
+          <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--green)">0.647</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:64.7%;background:var(--green)"></div></div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px">
+          <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:6px">medium</div>
+          <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--accent)">0.774</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:77.4%;background:var(--accent)"></div></div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px">
+          <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:6px">hard</div>
+          <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--yellow)">0.729</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:72.9%;background:var(--yellow)"></div></div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px">
+          <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:6px">expert</div>
+          <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--red)">0.010</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:1%;background:var(--red)"></div></div>
+          <div style="font-size:9px;color:var(--muted);margin-top:4px">correctly demoted</div>
+        </div>
+      </div>
+
+      <div style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.2);border-radius:8px;padding:14px;margin-top:16px">
+        <div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:6px;font-family:var(--mono)">// key finding</div>
+        <div style="font-size:12px;color:#9ca3af;line-height:1.6">Baseline scored 0.949 on medium — a reward ceiling effect where the untrained model exploited JSON formatting. GRPO training broke this shortcut and forced genuine hallucination detection. The curriculum correctly escalated to hard difficulty across 90 sessions, with expert-level demotion validating the system works as designed.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== LEADERBOARD TAB ===== -->
+  <div id="tab-leaderboard" class="hidden">
+    <div class="card">
+      <div class="card-title"><span class="icon">🏆</span> Model Leaderboard
+        <span style="margin-left:auto;font-size:11px;color:var(--muted);font-family:var(--mono)">deterministic grader · no LLM judge</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Model</th><th>Easy</th><th>Medium</th><th>Hard</th><th>Expert</th><th>Adversarial</th><th>Overall</th>
+          </tr>
+        </thead>
+        <tbody id="lb-body">
+          <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px;font-family:var(--mono)">Loading...</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:12px;padding:10px;background:var(--bg);border-radius:8px;font-size:11px;color:var(--muted);font-family:var(--mono)">
+        POST /leaderboard/record to add any model's scores. Overall = mean across all 5 task levels.
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== WORLD MODEL TAB ===== -->
+  <div id="tab-worldmodel" class="hidden">
+    <div class="card">
+      <div class="card-title"><span class="icon">🌍</span> World Model — Theme 3: World Modeling
+        <span class="new-tag">new</span>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6">The oversight agent builds a persistent internal model of agent behavior across episodes — tracking reliability, blind spots, and calibration drift. This endpoint shows the system's current world model state.</p>
+      
+      <div class="wm-grid">
+        <div class="wm-section">
+          <div class="wm-title">Agent Model</div>
+          <div class="info-row"><span class="info-key">detector_reliability</span><span class="info-val" id="wm-reliability">—</span></div>
+          <div class="info-row"><span class="info-key">overconfidence_rate</span><span class="info-val" id="wm-overconf">—</span></div>
+          <div class="info-row"><span class="info-key">calibration_error</span><span class="info-val" id="wm-ece">—</span></div>
+          <div class="info-row"><span class="info-key">blind_spots</span><span class="info-val" id="wm-blindspots">—</span></div>
+          <div class="info-row"><span class="info-key">episodes_monitored</span><span class="info-val" id="wm-episodes">—</span></div>
+        </div>
+        <div class="wm-section">
+          <div class="wm-title">Environment Model</div>
+          <div class="info-row"><span class="info-key">current_difficulty</span><span class="info-val" id="wm-difficulty">—</span></div>
+          <div class="info-row"><span class="info-key">detector_elo</span><span class="info-val" id="wm-det-elo">—</span></div>
+          <div class="info-row"><span class="info-key">generator_elo</span><span class="info-val" id="wm-gen-elo">—</span></div>
+          <div class="info-row"><span class="info-key">total_rounds</span><span class="info-val" id="wm-rounds">—</span></div>
+          <div class="info-row"><span class="info-key">predicted_next_action</span><span class="info-val" id="wm-action">—</span></div>
+        </div>
+      </div>
+
+      <div class="section-title">ELO Ratings — Live</div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px">
+        <div class="elo-bars" id="elo-bars">
+          <div class="elo-bar-wrap">
+            <div class="elo-bar-val" id="elo-det-val" style="color:var(--green)">1000</div>
+            <div class="elo-bar elo-bar-det" id="elo-det-bar" style="height:50%"></div>
+            <div class="elo-bar-lbl">Detector</div>
+          </div>
+          <div class="elo-bar-wrap">
+            <div class="elo-bar-val" id="elo-gen-val" style="color:var(--orange)">1000</div>
+            <div class="elo-bar elo-bar-gen" id="elo-gen-bar" style="height:50%"></div>
+            <div class="elo-bar-lbl">Generator</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">Multi-Step Episode Tracking</div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px">
+        <div class="info-row"><span class="info-key">total_episodes</span><span class="info-val" id="wm-total-ep">—</span></div>
+        <div class="info-row"><span class="info-key">episode_flow</span><span style="color:var(--accent2);font-family:var(--mono);font-size:11px">generator → detector → debate → oversight → curriculum</span></div>
+        <div class="info-row"><span class="info-key">system_health</span><span class="info-val" id="wm-health" style="font-size:11px">—</span></div>
+      </div>
+
+      <div style="text-align:right;margin-top:12px">
+        <button class="btn btn-primary" onclick="loadWorldModel()" style="font-size:11px;padding:7px 14px">↻ Refresh World Model</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== API TAB ===== -->
+  <div id="tab-api" class="hidden">
+    <div class="card">
+      <div class="card-title"><span class="icon">⚡</span> API Reference</div>
+      
+      <div class="section-title">Quick Start</div>
+      <div class="code-block">
+<span class="code-comment"># 1. health check</span>
+<span class="code-key">curl</span> https://rushikeshbathe096-hallucinet.hf.space/health
+
+<span class="code-comment"># 2. reset detector episode</span>
+<span class="code-key">curl</span> -X POST .../reset -d <span class="code-str">'{"task_id": "hard"}'</span>
+
+<span class="code-comment"># 3. submit detection</span>
+<span class="code-key">curl</span> -X POST .../step -d <span class="code-str">'{"action": {"has_hallucination": true, "hallucinated_claim": "1902", "correct_fact": "1889", "confidence": 0.95}}'</span>
+
+<span class="code-comment"># 4. trigger debate</span>
+<span class="code-key">curl</span> -X POST .../debate -d <span class="code-str">'{"generator_defense": "My response is accurate"}'</span>
+
+<span class="code-comment"># 5. openenv validate</span>
+<span class="code-key">openenv validate</span> --url https://rushikeshbathe096-hallucinet.hf.space
+      </div>
+
+      <div class="section-title">Core Endpoints</div>
+      <div class="endpoint-grid">
+        <div class="endpoint-item">
+          <div><span class="endpoint-method method-get">GET</span><span class="endpoint-path">/health</span></div>
+          <div class="endpoint-desc">Environment health check</div>
+        </div>
+        <div class="endpoint-item">
+          <div><span class="endpoint-method method-post">POST</span><span class="endpoint-path">/reset</span></div>
+          <div class="endpoint-desc">Start detector episode {task_id}</div>
+        </div>
+        <div class="endpoint-item">
+          <div><span class="endpoint-method method-post">POST</span><span class="endpoint-path">/step</span></div>
+          <div class="endpoint-desc">Submit detection action</div>
+        </div>
+        <div class="endpoint-item">
+          <div><span class="endpoint-method method-get">GET</span><span class="endpoint-path">/state</span></div>
+          <div class="endpoint-desc">Current episode state</div>
+        </div>
+        <div class="endpoint-item">
+          <div><span class="endpoint-method method-post">POST</span><span class="endpoint-path">/generator/reset</span></div>
+          <div class="endpoint-desc">Start generator episode</div>
+        </div>
+        <div class="endpoint-item">
+          <div><span class="endpoint-method method-post">POST</span><span class="endpoint-path">/generator/step</span></div>
+          <div class="endpoint-desc">Submit generator action</div>
+        </div>
+        <div class="endpoint-item">
+          <div><span class="endpoint-method method-post">POST</span><span class="endpoint-path">/debate</span><span class="new-tag">new</span></div>
+          <div class="endpoint-desc">Generator defends, detector re-evaluates</div>
+        </div>
+        <div class="endpoint-item">
+          <div><span class="endpoint-method method-get">GET</span><span class="endpoint-path">/elo/standings</span><span class="new-tag">new</span></div>
+          <div class="endpoint-desc">Live ELO ratings for both agents</div>
+        </div>
+        <div class="endpoint-item">
+          <div><span class="endpoint-method method-get">GET</span><span class="endpoint-path">/calibration</span><span class="new-tag">new</span></div>
+          <div class="endpoint-desc">Confidence vs accuracy (ECE metric)</div>
+        </div>
+        <div class="endpoint-item">
+          <div><span class="endpoint-method method-get">GET</span><span class="endpoint-path">/world/model</span><span class="new-tag">new</span></div>
+          <div class="endpoint-desc">Persistent world model state</div>
+        </div>
+        <div class="endpoint-item">
+          <div><span class="endpoint-method method-get">GET</span><span class="endpoint-path">/training/summary</span><span class="new-tag">new</span></div>
+          <div class="endpoint-desc">Before/after GRPO training results</div>
+        </div>
+        <div class="endpoint-item">
+          <div><span class="endpoint-method method-get">GET</span><span class="endpoint-path">/oversight/status</span></div>
+          <div class="endpoint-desc">System reliability metrics</div>
+        </div>
+        <div class="endpoint-item">
+          <div><span class="endpoint-method method-get">GET</span><span class="endpoint-path">/curriculum/status</span></div>
+          <div class="endpoint-desc">Curriculum progression state</div>
+        </div>
+        <div class="endpoint-item">
+          <div><span class="endpoint-method method-get">GET</span><span class="endpoint-path">/leaderboard</span></div>
+          <div class="endpoint-desc">Dynamic model rankings</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== OVERSIGHT TAB ===== -->
+  <div id="tab-oversight" class="hidden">
+    <div class="card">
+      <div class="card-title"><span class="icon">👁</span> Oversight Agent — System Monitor</div>
+      <div id="oversight-content" style="color:var(--muted);text-align:center;padding:20px;font-family:var(--mono)">Loading oversight data...</div>
+    </div>
+  </div>
+
+
+  <!-- ===== TAXONOMY TAB ===== -->
+  <div id="tab-taxonomy" class="hidden">
+    <div class="card">
+      <div class="card-title"><span class="icon">🧬</span> Hallucination Error Taxonomy
+        <span class="new-tag">dynamic</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--muted);font-family:var(--mono)" id="tax-summary"></span>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6">All error types are dynamically scanned from tasks.py. Each card shows the error type, its difficulty tier, description, example, and sample count.</p>
+      <div id="taxonomy-content" style="color:var(--muted);text-align:center;padding:20px;font-family:var(--mono)">Loading taxonomy...</div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+let currentTask = "easy";
+
+function selectTask(el, task) {
+  document.querySelectorAll(".task-pill").forEach(p => p.classList.remove("active"));
+  el.classList.add("active");
+  currentTask = task;
+}
+
+function showTab(name, btn) {
+  ["demo","training","leaderboard","worldmodel","api","oversight","taxonomy"].forEach(t => {
+    document.getElementById("tab-"+t).classList.add("hidden");
+  });
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.getElementById("tab-"+name).classList.remove("hidden");
+  if (btn) btn.classList.add("active");
+  if (name === "leaderboard") loadLeaderboard();
+  if (name === "oversight") loadOversight();
+  if (name === "worldmodel") loadWorldModel();
+  if (name === "taxonomy") loadTaxonomy();
+}
+
+async function loadSample() {
+  const btn = document.getElementById("load-btn");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Loading...';
+  try {
+    const r = await fetch("/reset", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({task_id: currentTask})
+    });
+    const d = await r.json();
+    const obs = d.observation || d;
+    document.getElementById("ref-box").innerText = obs.reference_document || "—";
+    document.getElementById("llm-box").innerText = obs.llm_response || "—";
+    document.getElementById("stat-samples").innerText = obs.total_samples || "—";
+    ["gen-result","det-result","verdict-box","debate-section"].forEach(id => {
+      document.getElementById(id).classList.add("hidden");
+    });
+    document.getElementById("stat-score").innerText = "—";
+  } catch(e) {
+    document.getElementById("ref-box").innerText = "Error: " + e.message;
+  }
+  btn.disabled = false;
+  btn.innerHTML = "Load Sample";
+}
+
+async function runGenerator() {
+  const text = document.getElementById("gen-text").value;
+  if (!text) { alert("Write a hallucination first"); return; }
+  const btn = document.getElementById("gen-btn");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Generating...';
+  try {
+    await fetch("/generator/reset", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({task_id:currentTask})});
+    const r = await fetch("/generator/step", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({action:{generated_response:text,error_type:document.getElementById("err-type").value,confidence:parseFloat(document.getElementById("gen-conf").value)}})
+    });
+    const d = await r.json();
+    const obs = d.observation || d;
+    const score = obs.fooling_rate || obs.score || 0;
+    const scoreEl = document.getElementById("gen-score");
+    scoreEl.innerText = "Generator: " + score.toFixed(3);
+    scoreEl.className = "score-big " + getScoreClass(score);
+    document.getElementById("gen-feedback").innerText = obs.feedback || "Submitted";
+    document.getElementById("gen-result").classList.remove("hidden");
+    document.getElementById("llm-box").innerText = text;
+  } catch(e) { alert("Error: " + e.message); }
+  btn.disabled = false;
+  btn.innerHTML = "🔥 Generate Hallucination";
+}
+
+async function runDetector() {
+  const claim = document.getElementById("det-claim").value;
+  const btn = document.getElementById("det-btn");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Detecting...';
+  try {
+    const r = await fetch("/step", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({action:{
+        has_hallucination: claim.length > 0,
+        hallucinated_claim: claim || null,
+        correct_fact: document.getElementById("det-fact").value || null,
+        confidence: parseFloat(document.getElementById("det-conf").value)
+      }})
+    });
+    const d = await r.json();
+    const obs = d.observation || d;
+    const score = obs.score || 0;
+    const bd = obs.metadata?.reward_breakdown || {};
+    
+    document.getElementById("det-score").innerText = score.toFixed(3);
+    document.getElementById("det-score").className = "score-big " + getScoreClass(score);
+    document.getElementById("stat-score").innerText = score.toFixed(3);
+    
+    document.getElementById("det-breakdown").innerHTML = `
+      <div class="breakdown-item"><div class="breakdown-val">${(bd.detection||0).toFixed(2)}</div><div class="breakdown-lbl">Detection</div></div>
+      <div class="breakdown-item"><div class="breakdown-val">${(bd.phrase||0).toFixed(2)}</div><div class="breakdown-lbl">Phrase ID</div></div>
+      <div class="breakdown-item"><div class="breakdown-val">${(bd.fact||0).toFixed(2)}</div><div class="breakdown-lbl">Correct Fact</div></div>
+      <div class="breakdown-item"><div class="breakdown-val">${(bd.calibration||0).toFixed(2)}</div><div class="breakdown-lbl">Calibration</div></div>
+    `;
+    document.getElementById("det-feedback").innerText = obs.feedback || "";
+    document.getElementById("det-result").classList.remove("hidden");
+    
+    const caught = claim.length > 0;
+    const vb = document.getElementById("verdict-box");
+    const vt = document.getElementById("verdict-text");
+    vb.classList.remove("hidden");
+    if (caught && score > 0.4) {
+      vt.className = "verdict verdict-win";
+      vt.innerText = "🛡️ DETECTOR WINS — Hallucination caught!";
+    } else if (!caught) {
+      vt.className = "verdict verdict-lose";
+      vt.innerText = "🔥 GENERATOR WINS — Hallucination slipped through!";
+    } else {
+      vt.className = "verdict verdict-pending";
+      vt.innerText = "⚠️ Partial detection — keep training!";
+    }
+    document.getElementById("g-reward").innerText = caught ? "0.001" : "0.999";
+    document.getElementById("d-reward").innerText = score.toFixed(3);
+    document.getElementById("debate-section").classList.remove("hidden");
+    
+    // Update metrics
+    updateMetrics();
+  } catch(e) { alert("Error: " + e.message); }
+  btn.disabled = false;
+  btn.innerHTML = "🛡️ Submit Detection";
+}
+
+async function runDebate() {
+  const btn = document.getElementById("debate-btn");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Debating...';
+  try {
+    const r = await fetch("/debate", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({generator_defense:"My response is factually supported by the source material and follows standard interpretation."})
+    });
+    const d = await r.json();
+    const debate = d.debate || {};
+    const win = debate.outcome === "detector_wins";
+    document.getElementById("debate-result").innerHTML = `
+      <div class="verdict ${win ? 'verdict-win' : 'verdict-pending'}" style="margin-top:8px">
+        ${win ? '🛡️ DETECTOR WINS DEBATE' : '🔥 DEBATE INCONCLUSIVE'}
+      </div>
+      <div class="feedback-box" style="margin-top:8px">
+        Defense score: ${(debate.generator_defense_score||0).toFixed(3)} · 
+        Reward delta: ${(debate.generator_final_reward_delta||0).toFixed(3)} · 
+        ${debate.adjudication_reason || "Debate complete"}
+      </div>
+    `;
+    document.getElementById("debate-result").classList.remove("hidden");
+    document.getElementById("elo-update").innerText = win ? "↑ detector" : "↑ generator";
+    updateMetrics();
+  } catch(e) { alert("Error: " + e.message); }
+  btn.disabled = false;
+  btn.innerHTML = "⚔️ Trigger Debate Round";
+}
+
+function getScoreClass(s) {
+  if (s >= 0.9) return "score-excellent";
+  if (s >= 0.7) return "score-good";
+  if (s >= 0.4) return "score-partial";
+  return "score-bad";
+}
+
+function clamp01(v) {
+  return Math.max(0, Math.min(1, Number.isFinite(v) ? v : 0));
+}
+
+function computeFrontendReliability(oversight, calibration) {
+  const accuracy = clamp01(oversight?.reliability_score ?? 0);
+  const overconfidence = clamp01(oversight?.overconfidence_rate ?? 0);
+  const ece = calibration?.detector?.calibration_error;
+  const calibrationQuality = Number.isFinite(ece) ? clamp01(1 - ece) : clamp01(1 - overconfidence);
+  const blindSpotCount = Array.isArray(oversight?.blind_spots) ? oversight.blind_spots.length : 0;
+  const coverage = clamp01(1 - (blindSpotCount / 5));
+  const blended = clamp01((0.5 * accuracy) + (0.3 * calibrationQuality) + (0.2 * coverage));
+  return { blended, accuracy, calibrationQuality, coverage };
+}
+
+async function updateMetrics() {
+  try {
+    const elo = await fetch("/elo/standings").then(r=>r.json());
+    document.getElementById("met-elo-det").innerText = Math.round(elo.detector_elo);
+    document.getElementById("met-elo-gen").innerText = Math.round(elo.generator_elo);
+    document.getElementById("met-rounds").innerText = elo.total_rounds;
+  } catch(e) {}
+  try {
+    const [ov, cal] = await Promise.all([
+      fetch("/oversight/status").then(r=>r.json()),
+      fetch("/calibration").then(r=>r.json()).catch(() => ({}))
+    ]);
+    const rel = computeFrontendReliability(ov, cal);
+    document.getElementById("met-reliability").innerText = rel.blended.toFixed(2);
+    document.getElementById("met-episodes").innerText = ov.episodes_monitored || 0;
+  } catch(e) {}
+}
+
+async function loadLeaderboard() {
+  try {
+    const d = await fetch("/leaderboard").then(r=>r.json());
+    const tbody = document.getElementById("lb-body");
+    const ranks = ["rank-1","rank-2","rank-3"];
+    tbody.innerHTML = d.leaderboard.map((e,i) => `
+      <tr>
+        <td><span class="rank-badge ${ranks[i]||''}">${e.rank}</span></td>
+        <td style="font-family:var(--mono)">${e.model} ${e.trained ? '<span class="trained-tag">GRPO</span>' : ''}</td>
+        <td>${e.easy}</td><td>${e.medium}</td><td>${e.hard}</td>
+        <td>${e.expert}</td><td>${e.adversarial}</td>
+        <td><strong style="color:var(--accent);font-family:var(--mono)">${e.overall}</strong></td>
+      </tr>
+    `).join("");
+  } catch(e) {
+    document.getElementById("lb-body").innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);font-family:var(--mono)">Error loading leaderboard</td></tr>';
+  }
+}
+
+async function loadOversight() {
+  try {
+    const [d, cal] = await Promise.all([
+      fetch("/oversight/status").then(r=>r.json()),
+      fetch("/calibration").then(r=>r.json()).catch(() => ({}))
+    ]);
+    const rel = computeFrontendReliability(d, cal);
+    const score = rel.blended;
+    const color = score > 0.8 ? "var(--green)" : score > 0.6 ? "var(--yellow)" : "var(--red)";
+    document.getElementById("oversight-content").innerHTML = `
+      <div style="font-size:56px;font-weight:800;color:${color};margin-bottom:8px;font-family:var(--mono)">${score.toFixed(3)}</div>
+      <div style="color:var(--muted);margin-bottom:20px;font-size:12px">Frontend Reliability Score (50% accuracy · 30% calibration · 20% coverage)</div>
+      <div class="info-row"><span class="info-key">Accuracy Component</span><span class="info-val">${rel.accuracy.toFixed(3)}</span></div>
+      <div class="info-row"><span class="info-key">Calibration Component</span><span class="info-val">${rel.calibrationQuality.toFixed(3)}</span></div>
+      <div class="info-row"><span class="info-key">Coverage Component</span><span class="info-val">${rel.coverage.toFixed(3)}</span></div>
+      <div class="info-row"><span class="info-key">Overconfidence Rate</span><span class="info-val">${(d.overconfidence_rate||0).toFixed(3)}</span></div>
+      <div class="info-row"><span class="info-key">Blind Spots</span><span class="info-val">${d.blind_spots?.length ? d.blind_spots.join(", ") : "None detected"}</span></div>
+      <div class="info-row"><span class="info-key">Episodes Monitored</span><span class="info-val">${d.episodes_monitored || 0}</span></div>
+      <div class="info-row"><span class="info-key">Fleet AI Bonus</span><span class="info-val" style="color:var(--green)">${d.fleet_ai_bonus ? "✓ enabled" : "—"}</span></div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:14px;font-size:12px;color:#9ca3af;font-family:var(--mono)">${d.system_feedback || "—"}</div>
+    `;
+  } catch(e) {
+    document.getElementById("oversight-content").innerText = "Error loading oversight data";
+  }
+}
+
+async function loadWorldModel() {
+  try {
+    const d = await fetch("/world/model").then(r=>r.json());
+    const am = d.agent_model || {};
+    const em = d.environment_model || {};
+    const ms = d.multi_step_episodes || {};
+    
+    document.getElementById("wm-reliability").innerText = (am.detector_reliability||0).toFixed(3);
+    document.getElementById("wm-overconf").innerText = (am.overconfidence_rate||0).toFixed(3);
+    document.getElementById("wm-ece").innerText = `${(am.calibration_error||0).toFixed(4)} (${am.calibration_interpretation||"N/A"})`;
+    document.getElementById("wm-blindspots").innerText = am.detector_blind_spots?.length ? am.detector_blind_spots.join(", ") : "None detected";
+    document.getElementById("wm-episodes").innerText = am.episodes_monitored || 0;
+    document.getElementById("wm-difficulty").innerText = em.current_difficulty || "—";
+    document.getElementById("wm-det-elo").innerText = em.detector_elo || 1000;
+    document.getElementById("wm-gen-elo").innerText = em.generator_elo || 1000;
+    document.getElementById("wm-rounds").innerText = em.total_rounds || 0;
+    document.getElementById("wm-action").innerText = d.predicted_next_action || "—";
+    document.getElementById("wm-total-ep").innerText = ms.total_episodes || 0;
+    document.getElementById("wm-health").innerText = d.system_health || "—";
+    
+    // ELO bars
+    const detElo = em.detector_elo || 1000;
+    const genElo = em.generator_elo || 1000;
+    const maxElo = Math.max(detElo, genElo, 1001);
+    const minElo = Math.min(detElo, genElo, 999);
+    const range = maxElo - minElo + 100;
+    const detH = Math.max(10, Math.round(((detElo - minElo + 50) / range) * 80));
+    const genH = Math.max(10, Math.round(((genElo - minElo + 50) / range) * 80));
+    
+    document.getElementById("elo-det-bar").style.height = detH + "%";
+    document.getElementById("elo-gen-bar").style.height = genH + "%";
+    document.getElementById("elo-det-val").innerText = Math.round(detElo);
+    document.getElementById("elo-gen-val").innerText = Math.round(genElo);
+
+    // Update header metrics too
+    document.getElementById("met-elo-det").innerText = Math.round(detElo);
+    document.getElementById("met-elo-gen").innerText = Math.round(genElo);
+    document.getElementById("met-rounds").innerText = em.total_rounds || 0;
+  } catch(e) {
+    console.error("World model error:", e);
+  }
+}
+
+async function loadTaxonomy() {
+  try {
+    const d = await fetch("/taxonomy").then(r=>r.json());
+    const diffColors = {easy:"var(--green)",medium:"var(--yellow)",hard:"var(--orange)",expert:"var(--red)"};
+    const diffBg = {easy:"rgba(16,185,129,0.1)",medium:"rgba(245,158,11,0.1)",hard:"rgba(249,115,22,0.1)",expert:"rgba(239,68,68,0.1)"};
+    const diffBorder = {easy:"rgba(16,185,129,0.3)",medium:"rgba(245,158,11,0.3)",hard:"rgba(249,115,22,0.3)",expert:"rgba(239,68,68,0.3)"};
+    document.getElementById("tax-summary").innerText = d.total_error_types + " types · " + d.total_samples_scanned + " samples";
+    let html = "";
+    const tax = d.taxonomy || {};
+    const counts = d.sample_counts || {};
+    for (const [cat, subs] of Object.entries(tax)) {
+      html += `<div style="margin-bottom:20px">`;
+      const catIcon = cat.includes("Factual") ? "📊" : cat.includes("Logical") ? "🧠" : "⚡";
+      html += `<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px;cursor:pointer" onclick="this.nextElementSibling.classList.toggle('hidden')">`;
+      html += `${catIcon} ${cat} <span style="font-size:10px;color:var(--muted);font-family:var(--mono)">click to toggle</span></div>`;
+      html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">`;
+      for (const [sub, types] of Object.entries(subs)) {
+        for (const [etype, info] of Object.entries(types)) {
+          const dc = diffColors[info.difficulty] || "var(--muted)";
+          const db = diffBg[info.difficulty] || "rgba(107,114,128,0.1)";
+          const dbr = diffBorder[info.difficulty] || "rgba(107,114,128,0.3)";
+          const sc = counts[etype] || info.sample_count || 0;
+          html += `<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;transition:border-color 0.2s" onmouseover="this.style.borderColor='${dc}'" onmouseout="this.style.borderColor=''">`;
+          html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">`;
+          html += `<span style="font-size:12px;font-weight:700;font-family:var(--mono);color:var(--accent2)">${etype}</span>`;
+          html += `<span style="padding:2px 8px;border-radius:12px;font-size:9px;font-weight:700;font-family:var(--mono);background:${db};color:${dc};border:1px solid ${dbr}">${info.difficulty}</span>`;
+          html += `</div>`;
+          html += `<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-family:var(--mono)">${sub}</div>`;
+          html += `<div style="font-size:11px;color:#d1d5db;line-height:1.5;margin-bottom:8px">${info.description}</div>`;
+          html += `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px;font-size:10px;font-family:var(--mono);color:#9ca3af;margin-bottom:6px">${info.example}</div>`;
+          html += `<div style="font-size:10px;color:var(--muted);font-family:var(--mono)">${sc} sample${sc!==1?"s":""}</div>`;
+          if (info.is_clean) html += `<div style="margin-top:4px;font-size:9px;padding:2px 6px;display:inline-block;border-radius:4px;background:rgba(139,92,246,0.15);color:#a78bfa;font-family:var(--mono)">clean sample</div>`;
+          html += `</div>`;
+        }
+      }
+      html += `</div></div>`;
+    }
+    document.getElementById("taxonomy-content").innerHTML = html;
+  } catch(e) {
+    document.getElementById("taxonomy-content").innerText = "Error loading taxonomy: " + e.message;
+  }
+}
+
+// Init
+loadSample();
+updateMetrics();
+setInterval(updateMetrics, 30000);
+</script>
+</body>
+</html>
