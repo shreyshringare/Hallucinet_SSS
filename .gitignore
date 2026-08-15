@@ -13,6 +13,9 @@ build/
 benchmarks/qa_data.json
 benchmarks/truthfulqa.csv
 
+# Kaggle/Colab download bundles
+results/*.zip
+
 # runtime artifacts
 leaderboard.json
 run_output.txt

@@ -296,7 +296,22 @@ Curriculum logged **19 promotions across 90 training sessions**, stabilising at 
 
 ### Ablation — Static Pool vs Adversarial Self-Play
 
-The project's central claim — that adversarial task generation beats training on the fixed curated pool — is tested directly, not just asserted. `training/train_ablation.py` runs two identical GRPO jobs that differ only in task-distribution source; see [TRAINING.md](./TRAINING.md#ablation--does-adversarial-self-play-actually-help) for setup and the demo's **Ablation** tab for a live comparison once both runs complete.
+The project's central claim — that adversarial task generation beats training on the fixed curated pool — is tested directly, not just asserted. `training/train_ablation.py` runs two identical GRPO jobs (same base model, LoRA config, reward function, 200 steps) that differ only in task-distribution source. See [TRAINING.md](./TRAINING.md#ablation--does-adversarial-self-play-actually-help) for setup and the demo's **Ablation** tab for a live rendering of these results.
+
+**Result: adversarial wins, decisively.**
+
+| Tier | Static (control) | Adversarial (treatment) | Delta |
+|---|---:|---:|---:|
+| Easy | 0.7295 | 0.8880 | +0.159 |
+| Medium | 0.7496 | 0.8893 | +0.140 |
+| Hard | 0.8006 | 0.8007 | ~tied |
+| Expert | 0.6223 | 0.8382 | **+0.216** |
+| Adversarial | 0.4516 | 0.8501 | **+0.399** |
+| **Mean reward** | **0.5485** | **0.7088** | **+0.160** |
+
+The static condition trained on the fixed 73-sample pool alone (dataset `uniqueness_ratio: 0.34` — heavy repetition). The adversarial condition mixed in unlimited programmatic variation plus genuine LLM-generated hallucinations (`uniqueness_ratio: 0.825` — curated 67 / programmatic 55 / generator-LLM 78 of 200 rows). The gap widens sharply on the two hardest tiers — nearly doubling on the Adversarial tier itself — which is exactly what the architecture predicts: a detector trained on a narrow, repeatable pool overfits hardest precisely where it needs to generalize most.
+
+One result doesn't fit the pattern and is reported as-is rather than smoothed over: the **Hard** tier is essentially tied between conditions. Both runs also score the model on the same 200 rows it trained on (not a held-out split), so treat these as an architecture comparison under identical training conditions, not an absolute generalization number — the *relative* gap between static and adversarial is the finding, not the raw percentages.
 
 ---
 

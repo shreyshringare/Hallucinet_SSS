@@ -80,11 +80,25 @@ def test_invalid_task_id_handled():
 
 
 def test_ablation_results_unavailable_by_default():
-    r = client.get("/ablation/results")
-    assert r.status_code == 200
-    body = r.json()
-    assert body["available"] is False
-    assert "instructions" in body
+    """Verifies the 'not run yet' response shape. Repo-local runs may
+    already have real summary files checked into results/ (this project's
+    own ablation has been run) — temporarily move them aside rather than
+    assuming a clean environment."""
+    backups = []
+    for path in (STATIC_SUMMARY, ADVERSARIAL_SUMMARY):
+        if os.path.isfile(path):
+            backup = path + ".bak"
+            os.replace(path, backup)
+            backups.append((path, backup))
+    try:
+        r = client.get("/ablation/results")
+        assert r.status_code == 200
+        body = r.json()
+        assert body["available"] is False
+        assert "instructions" in body
+    finally:
+        for path, backup in backups:
+            os.replace(backup, path)
 
 
 def test_ablation_results_available_when_both_summaries_present(tmp_path):
