@@ -7,34 +7,49 @@ sdk: docker
 pinned: false
 ---
 
-# HalluciNet Adversarial
-## Multi-Agent Self-Improving Hallucination Detection
+<div align="center">
 
-[![CI](https://github.com/rushikeshbathe096/HalluciNet/actions/workflows/ci.yml/badge.svg)](https://github.com/rushikeshbathe096/HalluciNet/actions/workflows/ci.yml)
+# HalluciNet Adversarial
+
+### Multi-Agent Self-Improving Hallucination Detection
+
+[![CI](https://github.com/shreyshringare/Hallucinet_SSS/actions/workflows/ci.yml/badge.svg)](https://github.com/shreyshringare/Hallucinet_SSS/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)]()
 [![OpenEnv Compatible](https://img.shields.io/badge/OpenEnv-2.0-success)]()
 [![Theme 1: Multi-Agent](https://img.shields.io/badge/Theme-Multi--Agent-blue)]()
 [![Theme 3: World Modeling](https://img.shields.io/badge/Theme-World--Modeling-orange)]()
 [![Theme 4: Self-Improvement](https://img.shields.io/badge/Theme-Self--Improvement-purple)]()
-[![Fleet AI Bonus](https://img.shields.io/badge/Bonus-Fleet--AI-orange)]()
-[![Halluminate Bonus](https://img.shields.io/badge/Bonus-Halluminate-red)]()
 
-> **"We didn't train a model to be right.  
-> We trained it to know when it might be wrong.  
-> That's a harder problem. That's what HalluciNet solves."**
+> *"We didn't train a model to be right.*
+> *We trained it to know when it might be wrong.*
+> *That's a harder problem. That's what HalluciNet solves."*
+
+[Live Demo](https://rushikeshbathe096-hallucinet.hf.space) · [Report Bug](https://github.com/shreyshringare/Hallucinet_SSS/issues) · [Request Feature](https://github.com/shreyshringare/Hallucinet_SSS/issues)
+
+</div>
 
 ---
 
-## Links
+## Table of Contents
 
-| Resource | Link |
-|---|---|
-| 🤗 **Live Environment** | https://rushikeshbathe096-hallucinet.hf.space |
-| 💻 **GitHub** | https://github.com/rushikeshbathe096/HalluciNet |
-| 📓 **GRPO Training Colab** | [Open in Colab](https://colab.research.google.com/drive/1hZ3UVzNT1Fug-59Iea5JcU7BvQDoUe_C?usp=sharing) |
-| 📝 **Training Details** | [TRAINING.md](./TRAINING.md) |
-| 📝 **Blog Post** | [blog.md](./blog.md) |
-| 📊 **Presentation** | [View Slides](https://drive.google.com/file/d/1rF3PIdZogXNoPC9KYRVGZ3aG60jG5m3M/view?usp=sharing) |
-| 🔁 **Round 1 Environment** | https://rushikeshbathe096-hallucination-detector.hf.space |
+- [The Problem](#the-problem)
+- [Why This Design](#why-this-design)
+- [Features](#features)
+- [Architecture](#architecture)
+- [The Grader — Anti-Cheat Design](#the-grader--anti-cheat-design)
+- [Task Tiers](#task-tiers)
+- [Results](#results)
+- [Monitoring & Governance](#monitoring--governance)
+- [Getting Started](#getting-started)
+- [Running with Docker](#running-with-docker)
+- [API Reference](#api-reference)
+- [OpenEnv Compliance](#openenv-compliance)
+- [Training](#training)
+- [Testing](#testing)
+- [Contributing](#contributing)
+- [License](#license)
+- [Acknowledgments](#acknowledgments)
 
 ---
 
@@ -44,7 +59,7 @@ LLMs hallucinate. Everyone knows this.
 
 The real problem is not that they are wrong — it's that they are **confidently wrong.**
 
-> *"The Eiffel Tower was completed in 1902, two years after the Paris Exposition."*  
+> *"The Eiffel Tower was completed in 1902, two years after the Paris Exposition."*
 > ← Completely false. Delivered at 0.94 confidence.
 
 A model that produces this with 0.94 confidence is not just incorrect — it is dangerous. In healthcare, legal, and financial AI, confident wrong answers cause real harm.
@@ -60,6 +75,21 @@ That is the capability gap HalluciNet closes.
 Most hallucination-detection pipelines use an LLM as the judge — GPT-4 scores whether another model's answer is faithful. That approach is expensive, non-reproducible (judge outputs drift between runs and model versions), and gameable (the policy learns to please the judge, not to detect errors).
 
 HalluciNet makes the opposite trade: a **fully deterministic grader**. Detection, phrase identification, fact correction, and confidence calibration are scored by pure string/logic functions with known anti-cheat baselines (always-flag scores 0.30, random scores 0.39, genuine detection scores 0.90+). The cost is less linguistic flexibility than an LLM judge; the payoff is a reward signal that is reproducible bit-for-bit, free to compute at RL scale, and impossible to sweet-talk. Combined with a programmatic sample generator (the task distribution can never be memorized) and adversarial self-play (a generator agent continuously manufactures harder failures), the environment stays honest as the detector improves — no human relabeling, no judge API bills, no reward hacking.
+
+---
+
+## Features
+
+- 🧠 **Deterministic grader** — no LLM judge anywhere in the reward loop; reproducible bit-for-bit
+- ⚔️ **Adversarial self-play** — a generator agent manufactures novel hallucinations; a detector agent learns to catch them
+- 📈 **Adaptive curriculum** — difficulty auto-promotes/demotes based on rolling detector performance
+- 🎯 **Calibration-aware scoring** — rewards honest confidence, penalizes confidently-wrong answers
+- 🔍 **Governance layer** — ELO ratings, oversight blind-spot detection, debate adjudication, world-model synthesis
+- 🧪 **Validated against reward hacking** — always-true/always-false/random strategies all score below genuine detection
+- 🔬 **A tested architectural claim, not an assumed one** — a real ablation (see [Results](#results)) proves adversarial self-play beats static training, not just asserts it
+- 🌐 **Two independent external benchmarks** — HaluEval and TruthfulQA, scored with the same grader used in training
+- 🐳 **OpenEnv 2.0 compliant** — Docker, REST, and Python-module deployment modes
+- ✅ **93 automated tests**, CI on Python 3.11/3.12
 
 ---
 
@@ -165,7 +195,7 @@ HalluciNet makes the opposite trade: a **fully deterministic grader**. Detection
 
 ## The Grader — Anti-Cheat Design
 
-Every reward signal flows through a single deterministic function in `grader.py`. No LLM judge. No fuzzy scoring.
+Every reward signal flows through a single deterministic function in [`grader.py`](./grader.py). No LLM judge. No fuzzy scoring.
 
 | Component | Weight | What it checks |
 |---|---:|---|
@@ -230,9 +260,17 @@ score              = 0.940    ← EXCELLENT
 
 The trained 3B model **acquires Hard-task capability** that the base 3B cannot attempt, and **outperforms the 8B model on Medium** while being 2.7× smaller.
 
+| Task | Baseline | Trained | Improvement |
+|---|---:|---:|---:|
+| Easy | 0.454 | 0.647 | +42.5% |
+| Medium | 0.375 | 0.774 | **+106.4%** |
+| Hard | — | 0.729 | **New capability** |
+
+Curriculum logged **19 promotions across 90 training sessions**, stabilising at the Hard tier — the environment working as designed.
+
 ### External Benchmark — HaluEval
 
-To validate against a public benchmark rather than only our own task tiers, `benchmarks/benchmark_halueval.py` evaluates any detector model on [HaluEval](https://github.com/RUCAIBox/HaluEval) (Li et al., EMNLP 2023) QA data, scored with the **same deterministic grader** used in RL training — so external numbers are directly comparable to the tier scores above:
+To validate against a public benchmark rather than only our own task tiers, [`benchmarks/benchmark_halueval.py`](./benchmarks/benchmark_halueval.py) evaluates any detector model on [HaluEval](https://github.com/RUCAIBox/HaluEval) (Li et al., EMNLP 2023) QA data, scored with the **same deterministic grader** used in RL training — so external numbers are directly comparable to the tier scores above:
 
 ```bash
 python benchmarks/benchmark_halueval.py --limit 100
@@ -250,7 +288,7 @@ The detector generalizes to a benchmark it was never tuned on, without an LLM ju
 
 ### External Benchmark — TruthfulQA
 
-[TruthfulQA](https://github.com/sylinrl/TruthfulQA) (Lin, Hilton & Evans, 2022) is built specifically around questions that trigger confidently-wrong answers from common misconceptions — closer to this project's actual thesis than a generic QA-hallucination set. Each question ships a real topic `Category` (Law, Health, Misconceptions, ...) and `Type` (Adversarial / Non-Adversarial), so `benchmarks/benchmark_truthfulqa.py` gets a genuine error-taxonomy breakdown for free instead of an invented one:
+[TruthfulQA](https://github.com/sylinrl/TruthfulQA) (Lin, Hilton & Evans, 2022) is built specifically around questions that trigger confidently-wrong answers from common misconceptions — closer to this project's actual thesis than a generic QA-hallucination set. Each question ships a real topic `Category` (Law, Health, Misconceptions, ...) and `Type` (Adversarial / Non-Adversarial), so [`benchmarks/benchmark_truthfulqa.py`](./benchmarks/benchmark_truthfulqa.py) gets a genuine error-taxonomy breakdown for free instead of an invented one:
 
 ```bash
 python benchmarks/benchmark_truthfulqa.py --limit 100
@@ -286,17 +324,9 @@ python benchmarks/benchmark_truthfulqa.py --limit 100
 
 The detector is markedly weaker on **Health**, **Language**, and **Fiction** questions, and — as expected of a dataset engineered to elicit confident falsehoods — the gap between Adversarial and Non-Adversarial accuracy is real but modest (0.788 vs 0.833), which the ECE (0.126, overconfident) corroborates: the detector's confidence outruns its actual accuracy more on this benchmark than on HaluEval. That is a concrete, falsifiable weakness rather than a claimed strength — useful signal for where curriculum tasks should add coverage next.
 
-| Task | Baseline | Trained | Improvement |
-|---|---:|---:|---:|
-| Easy | 0.454 | 0.647 | +42.5% |
-| Medium | 0.375 | 0.774 | **+106.4%** |
-| Hard | — | 0.729 | **New capability** |
-
-Curriculum logged **19 promotions across 90 training sessions**, stabilising at the Hard tier — the environment working as designed.
-
 ### Ablation — Static Pool vs Adversarial Self-Play
 
-The project's central claim — that adversarial task generation beats training on the fixed curated pool — is tested directly, not just asserted. `training/train_ablation.py` runs two identical GRPO jobs (same base model, LoRA config, reward function, 200 steps) that differ only in task-distribution source. See [TRAINING.md](./TRAINING.md#ablation--does-adversarial-self-play-actually-help) for setup and the demo's **Ablation** tab for a live rendering of these results.
+The project's central claim — that adversarial task generation beats training on the fixed curated pool — is tested directly, not just asserted. [`training/train_ablation.py`](./training/train_ablation.py) runs two identical GRPO jobs (same base model, LoRA config, reward function, 200 steps) that differ only in task-distribution source. See [TRAINING.md](./TRAINING.md#ablation--does-adversarial-self-play-actually-help) for setup and the demo's **Ablation** tab for a live rendering of these results.
 
 **Result: adversarial wins, decisively.**
 
@@ -319,27 +349,32 @@ One result doesn't fit the pattern and is reported as-is rather than smoothed ov
 
 | Component | File | What it does |
 |---|---|---|
-| ELO Rating | `server/elo.py` | Generator vs Detector chess-style rating, K=32 |
-| Calibration (ECE) | `server/calibration.py` | Confidence vs accuracy in 10 bins |
-| Leaderboard | `server/leaderboard.py` | Any model can be benchmarked live |
-| Oversight Agent | `server/oversight_agent.py` | Blind spots, overconfidence, adversarial injection |
-| Debate Coordinator | `server/debate_coordinator.py` | Adjudicates Generator defense turns |
-| Curriculum Manager | `curriculum.py` | Promotes/demotes difficulty on 3-session window |
-| World Model | `server/app.py /world/model` | Synthesises all governance into agent + env model |
+| ELO Rating | [`server/elo.py`](./server/elo.py) | Generator vs Detector chess-style rating, K=32 |
+| Calibration (ECE) | [`server/calibration.py`](./server/calibration.py) | Confidence vs accuracy in 10 bins |
+| Leaderboard | [`server/leaderboard.py`](./server/leaderboard.py) | Any model can be benchmarked live |
+| Oversight Agent | [`server/oversight_agent.py`](./server/oversight_agent.py) | Blind spots, overconfidence, adversarial injection |
+| Debate Coordinator | [`server/debate_coordinator.py`](./server/debate_coordinator.py) | Adjudicates Generator defense turns |
+| Curriculum Manager | [`curriculum.py`](./curriculum.py) | Promotes/demotes difficulty on 3-session window |
+| World Model | `server/app.py` → `/world/model` | Synthesises all governance into agent + env model |
 
 ---
 
-## Running Locally — Step by Step
+## Getting Started
 
-Follow in order. Assumes Python 3.10+ installed.
+### Prerequisites
 
-**Step 1 — Clone**
+- Python 3.11+
+- (Optional) A free [Groq API key](https://console.groq.com) — only needed for adversarial self-play / benchmark scripts, **not** for running the server or playing the demo
+
+### Installation
+
+**1. Clone the repository**
 ```bash
-git clone https://github.com/rushikeshbathe096/HalluciNet.git
-cd HalluciNet
+git clone https://github.com/shreyshringare/Hallucinet_SSS.git
+cd Hallucinet_SSS
 ```
 
-**Step 2 — Create and activate virtual environment**
+**2. Create and activate a virtual environment**
 ```bash
 python3 -m venv venv
 
@@ -349,16 +384,15 @@ source venv/bin/activate
 # Windows
 venv\Scripts\activate
 ```
-You should see `(venv)` in your prompt.
 
-**Step 3 — Install dependencies**
+**3. Install dependencies**
 ```bash
 pip install --upgrade pip
 pip install -r requirements.txt
 pip install -r server/requirements.txt
 ```
 
-**Step 4 — Set up environment variables**
+**4. Set up environment variables**
 ```bash
 cp .env.example .env
 ```
@@ -368,9 +402,9 @@ GROQ_API_KEY=gsk_your_key_here    # free at console.groq.com
 API_BASE_URL=https://api.groq.com/openai/v1
 MODEL_NAME=llama-3.1-8b-instant
 ```
-> The server (FastAPI + grader + environment) works **without any key**. The key is only needed to run `inference.py` (adversarial self-play).
+> The server (FastAPI + grader + environment) works **without any key**. The key is only needed to run `inference.py` (adversarial self-play) or the benchmark scripts.
 
-**Step 5 — Start the server**
+**5. Start the server**
 ```bash
 python -m uvicorn server.app:app --host 0.0.0.0 --port 7860 --reload
 ```
@@ -379,17 +413,17 @@ Expected output:
 INFO:     Uvicorn running on http://0.0.0.0:7860 (Press CTRL+C to quit)
 ```
 
-**Step 6 — Open the UI**
+**6. Open the UI**
 
 Go to **http://localhost:7860** — pick a difficulty tier, load a sample, play as Detector or Generator, see your score broken down live.
 
-**Step 7 — Sanity check the grader (optional)**
+**7. Sanity check the grader (optional)**
 ```bash
 python grader.py
 # ✓ All 10 grader tests passed.
 ```
 
-**Step 8 — Run adversarial self-play (optional, needs GROQ_API_KEY)**
+**8. Run adversarial self-play (optional, needs `GROQ_API_KEY`)**
 ```bash
 python inference.py
 # Runs 6 sessions, logs rewards, saves results/adversarial_results.csv
@@ -404,70 +438,6 @@ docker build -t hallucinet:latest .
 docker run -p 7860:7860 hallucinet:latest
 # Server at http://localhost:7860
 ```
-
----
-
-## Quick Check — Verify the Live Environment
-
-The environment is deployed at `https://rushikeshbathe096-hallucinet.hf.space`.  
-Commands below cover every major feature. Each pipes through `python3 -m json.tool` so the response is readable.
-
-```bash
-BASE=https://rushikeshbathe096-hallucinet.hf.space
-
-# 1. Health  →  {"status":"healthy","mode":"adversarial","version":"2.0"}
-curl -s $BASE/health
-
-# 2. Start a Hard episode  →  returns reference_document + llm_response
-curl -s -X POST $BASE/reset \
-  -H "Content-Type: application/json" \
-  -d '{"task_id": "hard"}' | python3 -m json.tool
-
-# 3. Submit a detection  →  returns score, reward, breakdown {detection,phrase,fact,calibration}
-curl -s -X POST $BASE/step \
-  -H "Content-Type: application/json" \
-  -d '{
-    "action": {
-      "has_hallucination": true,
-      "hallucinated_claim": "completed in 1902",
-      "correct_fact": "completed in 1889",
-      "confidence": 0.95
-    }
-  }' | python3 -m json.tool
-
-# 4. Debate round  →  generator defends, DebateCoordinator adjudicates
-curl -s -X POST $BASE/debate \
-  -H "Content-Type: application/json" \
-  -d '{"generator_defense": "My response is supported by the source document."}' \
-  | python3 -m json.tool
-
-# 5. Oversight  →  reliability_score, blind_spots, overconfidence_rate
-curl -s $BASE/oversight/status | python3 -m json.tool
-
-# 6. Curriculum  →  current_task, detector_avg, next_promotion condition
-curl -s $BASE/curriculum/status | python3 -m json.tool
-
-# 7. World Model (Theme 3)  →  agent_model + environment_model + predicted_next_action
-curl -s $BASE/world/model | python3 -m json.tool
-
-# 8. ELO standings  →  generator_elo, detector_elo, current_leader
-curl -s $BASE/elo/standings | python3 -m json.tool
-
-# 9. Calibration  →  ECE value, 10 confidence bins with actual accuracy per bin
-curl -s $BASE/calibration | python3 -m json.tool
-
-# 10. Leaderboard  →  all recorded model scores across all tiers
-curl -s $BASE/leaderboard | python3 -m json.tool
-
-# 11. Training summary  →  GRPO before/after numbers, curriculum promotions
-curl -s $BASE/training/summary | python3 -m json.tool
-
-# 12. OpenEnv validation
-openenv validate --url $BASE
-```
-
-> **No terminal?** Paste any GET URL directly into your browser.  
-> **Swagger UI** (all endpoints, interactive): `https://rushikeshbathe096-hallucinet.hf.space/docs`
 
 ---
 
@@ -495,6 +465,9 @@ openenv validate --url $BASE
 | GET | `/calibration` | ECE calibration curve (10 bins) |
 | GET | `/leaderboard` | Recorded model scores across all tiers |
 | POST | `/leaderboard/record` | `{"model_name", "task_id", "score", "trained"}` |
+| GET | `/ablation/results` | Static-vs-adversarial GRPO ablation comparison |
+
+Full interactive docs (Swagger UI) available at `/docs` once the server is running.
 
 ---
 
@@ -511,40 +484,57 @@ openenv validate --verbose
 
 Both `HallucinationEnvironment` and `GeneratorEnvironment` inherit from `openenv.core.Environment` with correct `reset()`, `step()`, and `state()` implementations. Concurrent WebSocket sessions supported.
 
-### Full Submission Validator
-
-Runs 10 checks end-to-end: HF Space health, all 5 task tiers, new endpoints (debate/oversight/leaderboard), openenv validate, Docker build, local imports, task counts, grader self-tests, secret check, README links.
-
-```bash
-# Make executable, then run — HF Space URL is already hardcoded inside
-chmod +x final_validate.sh
-./final_validate.sh
-
-# Expected final output:
-# ========================================
-# SUMMARY: 18 passed, 0 failed
-# 🎉 ALL CHECKS PASSED — READY TO SUBMIT
-# ========================================
-```
-
 ---
 
 ## Training
 
-**Base model:** `unsloth/Qwen2.5-3B-Instruct` (4-bit QLoRA)  
-**Method:** GRPO via `trl.GRPOTrainer` + LoRA rank 16  
-**Reward:** `grader.py` — same deterministic function used in the environment  
-**Platform:** Google Colab T4 GPU  
-**Notebook:** [Open in Colab](https://colab.research.google.com/drive/1hZ3UVzNT1Fug-59Iea5JcU7BvQDoUe_C?usp=sharing)  
+**Base model:** `unsloth/Qwen2.5-3B-Instruct` (4-bit QLoRA)
+**Method:** GRPO via `trl.GRPOTrainer` + LoRA rank 16
+**Reward:** `grader.py` — same deterministic function used in the environment
+**Platform:** Google Colab / Kaggle, T4 GPU
 **Full details:** [TRAINING.md](./TRAINING.md)
 
-The grader's deterministic reward enables stable GRPO training without a reward model.  
-The curriculum provides automatic difficulty scheduling during RL.  
-The multi-signal reward trains detection + phrase grounding + calibration simultaneously.
-
-**The environment was designed for RL training. The GRPO results prove it works.**
+The grader's deterministic reward enables stable GRPO training without a reward model. The curriculum provides automatic difficulty scheduling during RL. The multi-signal reward trains detection + phrase grounding + calibration simultaneously — and the [ablation results above](#ablation--static-pool-vs-adversarial-self-play) confirm the adversarial self-play design actually earns its complexity.
 
 ---
 
-Built for Meta PyTorch OpenEnv Hackathon × Scaler 2026  
-**Team TLE** — Abeer Nikhil Sane · Shreyas Shringare · Rushikesh Bathe · SPIT Mumbai
+## Testing
+
+```bash
+pip install pytest
+python -m pytest tests/ -q
+```
+
+93 tests covering the grader, environment, curriculum, ELO, calibration, leaderboard, debate coordinator, ablation dataset/reward construction, and the full API surface. CI runs the suite on every push against Python 3.11 and 3.12 — see [`.github/workflows/ci.yml`](./.github/workflows/ci.yml).
+
+---
+
+## Contributing
+
+Contributions are welcome. To propose a change:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/your-feature`)
+3. Make your changes, with tests where behavior changes
+4. Run the test suite (`python -m pytest tests/ -q`) and confirm it passes
+5. Commit with a clear message describing the *why*, not just the *what*
+6. Open a pull request
+
+For substantial changes (new environments, new grader logic, new benchmarks), open an issue first to discuss the approach — the deterministic-grader design in particular has specific anti-cheat invariants (see [The Grader](#the-grader--anti-cheat-design)) that new scoring logic needs to preserve.
+
+---
+
+## License
+
+Distributed under the MIT License. See [`LICENSE`](./LICENSE) for the full text.
+
+---
+
+## Acknowledgments
+
+Originally built for the Meta PyTorch OpenEnv Hackathon × Scaler 2026 by **Team TLE** — Abeer Nikhil Sane, Shreyas Shringare, Rushikesh Bathe (SPIT Mumbai). Extended since with a hygiene pass, a full test suite and CI, external benchmark validation (HaluEval, TruthfulQA), and a real static-vs-adversarial GRPO ablation.
+
+- [HaluEval](https://github.com/RUCAIBox/HaluEval) — Li et al., EMNLP 2023
+- [TruthfulQA](https://github.com/sylinrl/TruthfulQA) — Lin, Hilton & Evans, 2022
+- [Unsloth](https://github.com/unslothai/unsloth) — fast QLoRA fine-tuning
+- [TRL](https://github.com/huggingface/trl) — `GRPOTrainer`
